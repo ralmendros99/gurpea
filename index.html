@@ -7,7 +7,55 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#000000">
 <link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-</head><body>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--card:#121212;--ink:#fff;--mut:#9A9A9A;--line:#2B2B2B;--ac:#E01E2B;--onac:#fff;--ex:#FF4A55;--ok:#4CC38A;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#000}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 Barlow,system-ui,sans-serif}
+#app{display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto}
+main{flex:1;overflow-y:auto;padding:16px 16px 24px}
+nav{display:flex;border-top:1px solid var(--line);background:var(--card)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:9px 0 8px;font:600 12px Barlow,sans-serif;cursor:pointer}
+nav button b{display:block;font-size:20px;line-height:1.1}
+nav button.on{color:var(--ac);box-shadow:inset 0 3px 0 var(--ac)}
+h1{font:700 28px 'Barlow Condensed',sans-serif;margin:0 0 2px}
+h2{font:700 20px 'Barlow Condensed',sans-serif;margin:20px 0 8px}
+.sub{color:var(--mut);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.big{font:700 56px/1 'Barlow Condensed',sans-serif;letter-spacing:.5px}
+.go{width:100%;border:0;border-radius:14px;padding:22px;font:700 26px 'Barlow Condensed',sans-serif;background:var(--ac);color:var(--onac);cursor:pointer;margin:12px 0 8px}
+.go.out{background:transparent;color:var(--ac);border:2px solid var(--ac)}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--mut);margin-left:6px}.tag.r{border-color:var(--ac);color:var(--ex)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 13px;font:600 15px Barlow,sans-serif;cursor:pointer}
+.btn.p{background:var(--ac);color:var(--onac);border-color:var(--ac)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1;min-width:80px}
+.sp{justify-content:space-between}.sp>*{flex:0 1 auto}
+input,select{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px;font:16px Barlow,sans-serif}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.li:last-child{border:0}
+.x{border:0;background:none;color:var(--mut);font-size:20px;cursor:pointer;padding:0 6px}
+.n{font:700 24px 'Barlow Condensed',sans-serif}
+.ex{color:var(--ex)}.mut{color:var(--mut)}.ok{color:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.grid .card{margin:0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px}
+.cal .h{text-align:center;font-size:12px;color:var(--mut)}
+.d{aspect-ratio:1/1.1;border:1px solid var(--line);background:var(--card);border-radius:6px;padding:3px;font:600 13px Barlow,sans-serif;color:var(--ink);cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:space-between}
+.d small{font-size:10px;font-weight:500;color:var(--mut);line-height:1.1}
+.d.off{background:var(--bg)}.d.hol{border-color:var(--ex)}.d.sel{outline:2px solid var(--ac)}
+.d.t{border-color:var(--ac)}
+.bar{height:4px;border-radius:2px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.msg{font-size:13px;color:var(--ex);min-height:18px;margin-top:6px}
+textarea{width:100%;height:70px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px;font:12px monospace}
+.cl{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:16px;margin:0;cursor:pointer}
+input.ck{-webkit-appearance:none;appearance:none;width:24px;height:24px;flex:none;border:2px solid var(--line);border-radius:7px;background:#000;display:grid;place-content:center;padding:0;margin:0;cursor:pointer}
+input.ck:checked{background:var(--ac);border-color:var(--ac)}
+input.ck:checked::after{content:'';width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.sm>div{padding:2px 0;font-size:14px}.sm .x{font-size:16px;padding:0 4px}
+</style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
 <script>
