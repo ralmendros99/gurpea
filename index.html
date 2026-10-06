@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GURPEA</title>
+<meta name="application-name" content="GURPEA"><meta name="apple-mobile-web-app-title" content="GURPEA">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#000000">
+<link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+</head><body>
+<div id="app"><main id="v"></main>
+<nav id="nav"></nav></div>
+<script>
+const K='mi-jornada-v1';
+let S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
+S=Object.assign({exp:[],entries:[],active:null,trips:[],tasks:{},hol:{},paid:{},cfg:{}},S);
+S.trips.forEach(t=>{if(!t.s){t.s=t.a;t.e=t.b;t.st='';t.et='';t.c=t.c||t.d;t.p=t.p||''}});
+S.cfg=Object.assign({jm:480,he:15,hn:S.cfg&&S.cfg.hf||20,km:0.26,dmn:0,dcn:0,dmi:0,dci:0,pn:0,pi:0},S.cfg);
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const hm=d=>pad(d.getHours())+':'+pad(d.getMinutes());
+const tm=s=>{const[a,b]=s.split(':');return +a*60+ +b};
+const diff=(a,b)=>{let x=tm(b)-tm(a);return x<0?x+1440:x};
+const fmt=m=>Math.floor(m/60)+'h '+pad(Math.round(m%60));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const dow=d=>new Date(d+'T12:00').getDay();
+const isOff=d=>dow(d)%6==0||!!S.hol[d];
+const ent=e=>Math.max(0,diff(e.s,e.e)-e.br);
+const nm=e=>{const a=tm(e.s),b=a+diff(e.s,e.e),o=(x,y)=>Math.max(0,Math.min(b,y)-Math.max(a,x));return Math.min(ent(e),o(0,360)+o(1320,1800))};
+const dayMin=d=>S.entries.filter(e=>e.d==d).reduce((a,e)=>a+ent(e),0);
+const asg=d=>(S.tasks[d]||[]).reduce((a,t)=>a+t.m,0);
+function live(){const a=S.active;if(!a)return 0;const n=hm(new Date());return Math.max(0,diff(a.s,n)-a.br-(a.bs?diff(a.bs,n):0))}
+let tab='f',mo=new Date(new Date().getFullYear(),new Date().getMonth(),1),sel=null;
+const ym=()=>mo.getFullYear()+'-'+pad(mo.getMonth()+1);
+function stats(){const k=ym(),by={};
+const bn={};S.entries.filter(e=>e.d.startsWith(k)).forEach(e=>{by[e.d]=(by[e.d]||0)+ent(e);bn[e.d]=(bn[e.d]||0)+nm(e)});
+let ord=0,xl=0,xf=0,xn=0,days=[];
+Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){xf+=w;days.push([d,w,w,1,0])}else{const x=Math.max(0,w-S.cfg.jm),n=Math.min(x,bn[d]||0);ord+=w-x;xl+=x-n;xn+=n;if(x)days.push([d,w,x,0,n])}});
+const tr=S.trips.filter(t=>t.s.startsWith(k)),xs=S.exp.filter(x=>x.d.startsWith(k)),sm=f=>xs.filter(f).reduce((a,x)=>a+x.im,0);
+return{ord,xl,xf,xn,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
+const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichaje'],['c','▦','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','€','Nómina']];
+function go(t){tab=t;render()}
+function shift(n){mo=new Date(mo.getFullYear(),mo.getMonth()+n,1);sel=null;render()}
+const mnav=()=>`<div class="row sp" style="margin-bottom:10px"><button class="btn" onclick="shift(-1)">‹</button><b style="font:700 20px 'Barlow Condensed'">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><button class="btn" onclick="shift(1)">›</button></div>`;
+const say=t=>{const m=$('msg');if(m)m.textContent=t};
+function render(){
+$('nav').innerHTML=TABS.map(t=>`<button class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><b>${t[1]}</b>${t[2]}</button>`).join('');
+$('v').innerHTML={f:vF,x:vX,v:vV,n:vN,c:vC}[tab]();}
+/* FICHAJE */
+function vF(){const n=new Date(),t=ymd(n),a=S.active;
+const tod=dayMin(t)+(a&&a.d==t?live():0);
+const hoy=S.entries.filter(e=>e.d==t);
+const rec=[...S.entries].sort((x,y)=>(y.d+y.s).localeCompare(x.d+x.s)).slice(0,12);
+return `<h1>${DIAS[n.getDay()]} ${n.getDate()} ${MES[n.getMonth()].toLowerCase()}</h1>
+<p class="sub">Jornada 7:00 – 15:00${isOff(t)?' · hoy es día no laborable: todo cuenta como extra':''}</p>
+<div class="card"><div class="mut">Trabajado hoy</div><div class="big" id="tm">${fmt(tod)}</div>
+${a?`<div class="mut">Entrada a las ${a.s}${a.bs?' · en pausa desde las '+a.bs:''}</div>`:'<div class="mut">Sin fichar</div>'}
+<button class="go ${a?'out':''}" onclick="tog()">${a?'Fichar salida':'Fichar entrada'}</button>
+${a?`<button class="btn" style="width:100%" onclick="pau()">${a.bs?'Reanudar tras la pausa':'Empezar pausa'}</button>`:''}</div>
+${hoy.length?'<h2>Hoy</h2><div class="card">'+hoy.map(li).join('')+'</div>':''}
+<h2>Añadir o corregir un fichaje</h2><div class="card">
+<div class="row"><div><label>Fecha</label><input type="date" id="md" value="${t}"></div></div>
+<div class="row" style="margin-top:8px"><div><label>Entrada</label><input type="time" id="ms" value="07:00"></div><div><label>Salida</label><input type="time" id="me" value="15:00"></div><div><label>Pausa (min)</label><input type="number" id="mb" value="0" min="0" step="5"></div></div>
+<button class="btn p" style="width:100%;margin-top:10px" onclick="addE()">Guardar fichaje</button><div class="msg" id="msg"></div></div>
+${rec.length?'<h2>Últimos registros</h2><div class="card">'+rec.map(e=>li(e,1)).join('')+'</div>':''}`}
+const li=(e,d)=>`<div class="li"><span>${d?e.d.slice(8)+'/'+e.d.slice(5,7)+' · ':''}${e.s} – ${e.e}${e.br?' · pausa '+e.br+'m':''}</span><span class="row sp"><b>${fmt(ent(e))}</b><button class="x" onclick="delE(${e.id})">×</button></span></div>`;
+function tog(){const n=new Date();if(!S.active)S.active={d:ymd(n),s:hm(n),br:0,bs:null};else{const a=S.active;if(a.bs){a.br+=diff(a.bs,hm(n));a.bs=null}S.entries.push({id:Date.now(),d:a.d,s:a.s,e:hm(n),br:a.br});S.active=null}save();render()}
+function pau(){const a=S.active,n=hm(new Date());if(a.bs){a.br+=diff(a.bs,n);a.bs=null}else a.bs=n;save();render()}
+function addE(){const d=$('md').value,s=$('ms').value,e=$('me').value,b=+$('mb').value||0;
+if(!d||!s||!e)return say('Rellena fecha, entrada y salida.');
+S.entries.push({id:Date.now(),d,s,e,br:b});save();render()}
+function delE(id){S.entries=S.entries.filter(e=>e.id!=id);save();render()}
+/* EXTRAS */
+function vX(){const s=stats();
+return `<h1>Horas extra</h1><p class="sub">Todo lo que supera 8 h en día laborable, más fines de semana y festivos. Las horas entre 22:00 y 6:00 cuentan como nocturnas.</p>${mnav()}
+<div class="grid"><div class="card"><div class="mut">Extra normales</div><div class="n ex">${fmt(s.xl)}</div></div>
+<div class="card"><div class="mut">Extra nocturnas/festivas</div><div class="n ex">${fmt(s.xf+s.xn)}</div></div></div>
+<h2>Días con extra</h2><div class="card">${s.days.length?s.days.map(([d,w,x,f,n])=>`<div class="li"><span>${DIAS[dow(d)]} ${d.slice(8)}/${d.slice(5,7)}${f?' <span class="mut">(no laborable)</span>':''}${n?' <span class="mut">('+fmt(n)+' nocturnas)</span>':''}</span><span><span class="mut">${fmt(w)} trabajadas · </span><b class="ex">+${fmt(x)}</b></span></div>`).join(''):'<span class="mut">Sin horas extra este mes.</span>'}</div>`}
+/* VIAJES */
+const DT={dmn:'Media dieta nacional',dcn:'Dieta completa nacional',dmi:'Media dieta internacional',dci:'Dieta completa internacional',pn:'Pernocta nacional',pi:'Pernocta internacional'};
+const sayI=(t,i)=>{const m=$(i);if(m)m.textContent=t};
+const paySel=id=>`<label>Pagado con</label><select id="${id}"><option value="p">Tarjeta particular</option><option value="e">Tarjeta de empresa</option></select>`;
+const nz=x=>x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+const CI={};
+`Francia:París,Lyon,Marsella,Toulouse,Burdeos,Niza,Nantes,Estrasburgo,Lille,Montpellier,Grenoble,Rennes,Perpiñán,Toulon,Dijon,Paris|Portugal:Lisboa,Lisbon,Oporto,Porto,Braga,Coímbra,Faro,Aveiro,Setúbal,Guimarães|Italia:Roma,Rome,Milán,Milan,Turín,Turin,Nápoles,Naples,Bolonia,Florencia,Florence,Venecia,Venice,Génova,Genoa,Verona,Bari,Padua,Parma,Bérgamo,Módena|Alemania:Berlín,Múnich,Munich,Hamburgo,Fráncfort,Frankfurt,Colonia,Cologne,Stuttgart,Düsseldorf,Dortmund,Essen,Leipzig,Bremen,Dresde,Hannover,Núremberg,Wolfsburgo,Ingolstadt|Reino Unido:Londres,London,Manchester,Birmingham,Liverpool,Glasgow,Edimburgo,Leeds,Bristol,Cardiff,Belfast,Sheffield,Newcastle|Países Bajos:Ámsterdam,Amsterdam,Róterdam,Rotterdam,La Haya,Utrecht,Eindhoven|Bélgica:Bruselas,Brussels,Amberes,Gante,Brujas,Lieja|Suiza:Zúrich,Ginebra,Geneva,Berna,Basilea,Lausana|Austria:Viena,Vienna,Graz,Linz,Salzburgo,Innsbruck|Polonia:Varsovia,Warsaw,Cracovia,Wroclaw,Poznan,Gdansk,Lodz|Chequia:Praga,Prague,Brno,Ostrava|Hungría:Budapest|Rumanía:Bucarest,Cluj|Irlanda:Dublín,Dublin,Cork|Dinamarca:Copenhague|Suecia:Estocolmo,Gotemburgo,Malmö|Noruega:Oslo|Finlandia:Helsinki|Grecia:Atenas,Salónica|Turquía:Estambul,Ankara,Bursa|Marruecos:Tánger,Casablanca,Rabat,Marrakech|Estados Unidos:Nueva York,Chicago,Houston,Detroit,Los Ángeles,Miami,Atlanta,Boston,Dallas|México:Ciudad de México,Monterrey,Puebla|Brasil:São Paulo,Río de Janeiro|China:Shanghái,Pekín,Shenzhen|India:Bombay,Delhi,Pune|Japón:Tokio,Osaka|Eslovaquia:Bratislava|Eslovenia:Liubliana|Croacia:Zagreb|Bulgaria:Sofía|Luxemburgo:Luxemburgo|Andorra:Andorra la Vella|Argelia:Argel`.split('|').forEach(l=>{const[p,c]=l.split(':');CI[nz(p)]=p;c.split(',').forEach(x=>CI[nz(x)]=p)});
+`Madrid,Barcelona,Valencia,Sevilla,Zaragoza,Málaga,Murcia,Palma,Las Palmas,Bilbao,Alicante,Córdoba,Valladolid,Vigo,Gijón,A Coruña,Vitoria,Vitoria-Gasteiz,Granada,Elche,Oviedo,Badalona,Cartagena,Terrassa,Jerez,Sabadell,Móstoles,Santa Cruz de Tenerife,Pamplona,Almería,Alcalá de Henares,Fuenlabrada,Leganés,San Sebastián,Donostia,Getafe,Burgos,Albacete,Santander,Castellón,Alcorcón,Logroño,Badajoz,Salamanca,Huelva,Marbella,Lleida,Tarragona,León,Cádiz,Jaén,Ourense,Girona,Lugo,Cáceres,Toledo,Pontevedra,Palencia,Ciudad Real,Zamora,Ávila,Cuenca,Huesca,Segovia,Soria,Teruel,Guadalajara,Mataró,Reus,Manresa,Granollers,Martorell,Vilanova i la Geltrú,Sitges,Igualada,Vic,Figueres,Rubí,Cerdanyola,Sant Cugat,Vilafranca del Penedès,Abrera,Cornellà,Hospitalet,Sant Boi,Viladecans,El Prat,Valls,Tortosa,Ferrol,Santiago de Compostela,Mérida,Ceuta,Melilla,Ibiza,Mahón,Irún,Eibar,Getxo,Barakaldo,Algeciras,Dos Hermanas,Almussafes,Sagunto,Gandía,Torrelavega,Ponferrada,España`.split(',').forEach(x=>CI[nz(x)]='España');
+function geo(t){const a=t.split(',').map(x=>x.trim()),c=a[0];let p=a[1];
+if(p)return{c,p:p[0].toUpperCase()+p.slice(1),nat:nz(p)=='espana'};
+p=CI[nz(c)];return p?{c,p,nat:p=='España'}:null}
+const fd=d=>d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4),fm=d=>d.slice(8)+'/'+d.slice(5,7);
+const inT=(t,d)=>d>=t.s&&(t.cur||d<=t.e);
+const tripOf=d=>S.trips.filter(t=>inT(t,d)).sort((a,b)=>b.s.localeCompare(a.s))[0];
+function pern(t){if(!t.pn)return{n:0,im:0};const e=t.cur?ymd(new Date()):t.e,n=Math.max(0,Math.round((new Date(e+'T12:00')-new Date(t.s+'T12:00'))/864e5));return{n,im:n*(t.nat?S.cfg.pn:S.cfg.pi)}}
+const pay=x=>`<span class="tag ${x.pay=='p'?'r':''}">Tarjeta ${x.pay=='p'?'particular':'de empresa'}</span>`;
+const xl=(x,m)=>`<div>${x.k=='d'?'Dieta':'Gasto vario'}: ${m?fm(x.d)+' · ':''}${esc(x.c)}${x.k=='g'?' '+eur(x.im):''} ${pay(x)}<button class="x" onclick="delX(${x.id})">×</button></div>`;
+function blk(t){const m=t.cur||t.e!=t.s,xs=S.exp.filter(x=>tripOf(x.d)===t).sort((a,b)=>a.d.localeCompare(b.d)),pe=pern(t),n=new Date();
+return `<div class="li" style="align-items:flex-start"><div style="flex:1"><b>${fd(t.s)}${t.st?' '+t.st:''} salida - ${t.cur?'llegada por definir':fd(t.e)+(t.et?' '+t.et:'')+' llegada'}</b><div class="sm" style="padding-left:14px">
+<div>Destino: ${esc(t.c)}${t.p?' ('+esc(t.p)+')':''}</div>${t.km?`<div>Km: ${t.km}</div>`:''}
+${xs.filter(x=>x.k=='d').map(x=>xl(x,m)).join('')}${t.di?`<div>Dietas anteriores: ${eur(t.di)}</div>`:''}
+${t.pn?`<div>Pernocta: ${pe.n} ${pe.n==1?'noche':'noches'} ${t.nat?'nacional':'internacional'} · ${eur(pe.im)}${t.cur?' (hasta hoy)':''}</div>`:''}
+${xs.filter(x=>x.k=='g').map(x=>xl(x,m)).join('')}
+${t.cur?`<div class="row" style="margin-top:8px"><label class="cl"><input type="checkbox" class="ck" checked onchange="closeT(${t.id})"> En curso</label><input type="date" id="ce${t.id}" value="${ymd(n)}"><input type="time" id="ct${t.id}" value="${hm(n)}"></div><div class="mut" style="font-size:12px">Desmarca “En curso” para cerrar el viaje con esa llegada.</div>`:''}
+</div></div><button class="x" onclick="delV(${t.id})">×</button></div>`}
+function vV(){const s=stats(),t=ymd(new Date()),it=[];
+s.tr.forEach(r=>it.push([r.s+' '+(r.st||'00:00'),blk(r)]));
+const by={};s.xs.filter(x=>!tripOf(x.d)).forEach(x=>(by[x.d]=by[x.d]||[]).push(x));
+Object.keys(by).forEach(d=>it.push([d+' 99',`<div class="li" style="align-items:flex-start"><div style="flex:1"><b>${fd(d)}</b><div class="sm" style="padding-left:14px">${by[d].sort((a,b)=>a.k.localeCompare(b.k)).map(x=>xl(x,0)).join('')}</div></div></div>`]));
+it.sort((a,b)=>a[0].localeCompare(b[0]));
+return `<h1>Viajes</h1><p class="sub">Desplazamientos, dietas y gastos.</p>${mnav()}
+<div class="grid"><div class="card"><div class="mut">Kilómetros</div><div class="n">${s.km} km</div></div><div class="card"><div class="mut">Dietas y pernoctas</div><div class="n">${eur(s.di)}</div></div>
+<div class="card"><div class="mut">Gastos varios</div><div class="n">${eur(s.gv)}</div></div><div class="card"><div class="mut">Con tarjeta particular</div><div class="n ex">${eur(s.gp)}</div></div></div>
+<h2>Nuevo viaje</h2><div class="card"><label>Ciudad de destino</label><input id="vd" placeholder="Ej. Lyon (o «Ciudad, País»)">
+<div class="row" style="margin-top:8px"><div style="flex:2"><label>Fecha de salida</label><input type="date" id="vs" value="${t}"></div><div><label>Hora</label><input type="time" id="vst" value="07:00"></div></div>
+<div class="row" style="margin-top:8px"><div style="flex:2"><label>Fecha de llegada</label><input type="date" id="ve" value="${t}"></div><div><label>Hora</label><input type="time" id="vet" value="15:00"></div></div>
+<div class="row" style="margin-top:8px"><div><label>Km</label><input type="number" id="vk" min="0" value="0"></div></div>
+<div class="row" style="margin-top:12px"><label class="cl"><input type="checkbox" class="ck" id="vp"> Pernocta</label><label class="cl"><input type="checkbox" class="ck" id="vc"> En curso</label></div>
+<button class="btn p" style="width:100%;margin-top:12px" onclick="addV()">Guardar viaje</button><div class="msg" id="msg"></div></div>
+<h2>Añadir dieta</h2><div class="card"><div class="row"><div><label>Fecha</label><input type="date" id="dd" value="${t}"></div><div style="flex:2"><label>Tipo</label><select id="dk">${['dmn','dcn','dmi','dci'].map(k=>`<option value="${k}">${DT[k]}</option>`).join('')}</select></div></div>
+<div style="margin-top:8px">${paySel('dp')}</div><button class="btn p" style="width:100%;margin-top:10px" onclick="addD()">Guardar dieta</button><div class="msg" id="msgd"></div></div>
+<h2>Añadir gasto vario</h2><div class="card"><div class="row"><div><label>Fecha</label><input type="date" id="gd" value="${t}"></div><div><label>Importe (€)</label><input type="number" id="gi" min="0" step="0.01"></div></div>
+<label style="margin-top:8px">Concepto</label><input id="gc" placeholder="Gasolina, taxi, peaje…">
+<div style="margin-top:8px">${paySel('gy')}</div><button class="btn p" style="width:100%;margin-top:10px" onclick="addG()">Guardar gasto</button><div class="msg" id="msgg"></div></div>
+<h2>Viajes del mes</h2><div class="card">${it.length?it.map(x=>x[1]).join(''):'<span class="mut">Aún no hay viajes, dietas ni gastos este mes.</span>'}</div>`}
+function addV(){const d=$('vd').value.trim(),s=$('vs').value,st=$('vst').value,cur=$('vc').checked,e=$('ve').value,et=$('vet').value,pn=$('vp').checked;
+if(!d||!s)return say('Indica destino y fecha de salida.');
+if(!cur&&!e)return say('Indica la llegada o marca «En curso».');
+if(!cur&&(e<s||(e==s&&st&&et&&et<st)))return say('La llegada no puede ser anterior a la salida.');
+const g=geo(d);if(!g)return say('No reconozco esa ciudad. Escríbela como «Ciudad, País».');
+if(pn&&!cur&&e==s)return say('Para pernoctar, la llegada debe ser otro día.');
+S.trips.push({id:Date.now(),d,c:g.c,p:g.p,nat:g.nat,s,st,e:cur?null:e,et:cur?'':et,km:+$('vk').value||0,pn,cur});save();render()}
+function closeT(id){const t=S.trips.find(x=>x.id==id);if(!t)return;t.cur=false;t.e=$('ce'+id).value||ymd(new Date());if(t.e<t.s)t.e=t.s;t.et=$('ct'+id).value||hm(new Date());save();render()}
+function addD(){const k=$('dk').value,d=$('dd').value,im=S.cfg[k];
+if(!d)return sayI('Indica la fecha.','msgd');
+if(!im)return sayI('Esa dieta tiene tarifa 0 €. Ponla en Nómina › Tarifas.','msgd');
+S.exp.push({id:Date.now(),d,k:'d',c:DT[k],im,pay:$('dp').value});save();render()}
+function addG(){const c=$('gc').value.trim(),d=$('gd').value,im=+$('gi').value;
+if(!c||!d||!im)return sayI('Indica fecha, concepto e importe.','msgg');
+S.exp.push({id:Date.now(),d,k:'g',c,im,pay:$('gy').value});save();render()}
+function delV(id){S.trips=S.trips.filter(t=>t.id!=id);save();render()}
+function delX(id){S.exp=S.exp.filter(x=>x.id!=id);save();render()}
+/* NÓMINA */
+const eur=n=>n.toFixed(2)+' €';
+function vN(){const s=stats(),c=S.cfg,k=ym(),h=m=>m/60;
+const ex=h(s.xl)*c.he,fe=h(s.xf+s.xn)*c.hn,kmv=s.km*c.km,tot=ex+fe+kmv+s.di,pd=S.paid[k];
+const tin=(k,l)=>`<div><label>${l}</label><input type="number" step="0.01" value="${c[k]}" onchange="cfg('${k}',this.value)"></div>`;
+return `<h1>Nómina</h1><p class="sub">Resumen del mes para contrastarlo con tu nómina.</p>${mnav()}
+<div class="card"><div class="li"><span>Horas ordinarias</span><b>${fmt(s.ord)}</b></div>
+<div class="li"><span>Extra normales</span><b>${fmt(s.xl)} · ${eur(ex)}</b></div>
+<div class="li"><span>Extra nocturnas/festivas</span><b>${fmt(s.xf+s.xn)} · ${eur(fe)}</b></div>
+<div class="li"><span>Kilometraje (${s.km} km)</span><b>${eur(kmv)}</b></div>
+<div class="li"><span>Dietas y pernoctas</span><b>${eur(s.di)}</b></div>
+<div class="li"><span><b>Total variable estimado</b></span><b class="n">${eur(tot)}</b></div>
+<div class="li"><span class="mut">Gastos varios (aparte)<br>de ellos con tarjeta particular</span><span style="text-align:right"><b>${eur(s.gv)}</b><br><b class="ex">${eur(s.gvp)}</b></span></div></div>
+<h2>Contrastar</h2><div class="card"><label>Variable que aparece en tu nómina de ${MES[mo.getMonth()].toLowerCase()} (€)</label>
+<input type="number" step="0.01" id="pd" value="${pd??''}" onchange="setPd(this.value)">
+${pd!=null&&pd!==''?`<p class="${tot-pd>0.5?'ex':'ok'}" style="margin:10px 0 0"><b>${tot-pd>0.5?'Te faltan por cobrar '+eur(tot-pd):tot-pd<-0.5?'Te han pagado '+eur(pd-tot)+' más de lo calculado':'Cuadra con tu cálculo'}</b></p>`:''}</div>
+<h2>Tarifas</h2><div class="card"><div class="mut" style="margin-bottom:6px">Horas y kilometraje</div><div class="row">${tin('he','€/h extra normal')}${tin('hn','€/h extra nocturna/festiva')}${tin('km','€/km')}</div>
+<div class="mut" style="margin:12px 0 6px">Dietas</div><div class="row">${tin('dmn','Media dieta nacional')}${tin('dcn','Dieta completa nacional')}</div><div class="row" style="margin-top:8px">${tin('dmi','Media dieta internacional')}${tin('dci','Dieta completa internacional')}</div><div class="row" style="margin-top:8px">${tin('pn','Pernocta nacional')}${tin('pi','Pernocta internacional')}</div></div>
+<h2>Copia de seguridad</h2><div class="card"><div class="row"><button class="btn" onclick="bk()">Copiar datos</button><button class="btn" onclick="rs()">Restaurar</button></div>
+<textarea id="bk" placeholder="Pega aquí una copia para restaurarla"></textarea><div class="msg" id="msg"></div></div>`}
+function setPd(v){S.paid[ym()]=v===''?null:+v;save();render()}
+function cfg(k,v){S.cfg[k]=+v||0;save();render()}
+function bk(){const j=JSON.stringify(S);$('bk').value=j;try{navigator.clipboard.writeText(j).then(()=>say('Copiado. Pégalo en una nota o mensaje y guárdalo.'),()=>say('Selecciona el texto y cópialo a mano.'))}catch(e){say('Selecciona el texto y cópialo a mano.')}}
+function rs(){try{const o=JSON.parse($('bk').value);if(!o.entries)throw 0;S=Object.assign(S,o);save();render()}catch(e){say('El texto no es una copia válida.')}}
+/* CALENDARIO */
+function vC(){const y=mo.getFullYear(),m=mo.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,nd=new Date(y,m+1,0).getDate(),t=ymd(new Date());
+let g=['L','M','X','J','V','S','D'].map(x=>`<div class="h">${x}</div>`).join('')+'<div></div>'.repeat(first);
+for(let i=1;i<=nd;i++){const d=y+'-'+pad(m+1)+'-'+pad(i),w=dayMin(d),a=asg(d),p=w?Math.min(100,a/w*100):(a?100:0);
+g+=`<button class="d ${isOff(d)?'off':''} ${S.hol[d]?'hol':''} ${d==sel?'sel':''} ${d==t?'t':''}" onclick="pick('${d}')"><span>${i}</span><span><small>${w?fmt(w).replace(' ',':'):''}</small><div class="bar"><i style="width:${p}%"></i></div></span></button>`}
+const k=ym(),pr={};Object.keys(S.tasks).filter(d=>d.startsWith(k)).forEach(d=>S.tasks[d].forEach(x=>pr[x.p]=(pr[x.p]||0)+x.m));
+const all=[...new Set(Object.values(S.tasks).flat().map(x=>x.p))];
+let det='';
+if(sel){const w=dayMin(sel),a=asg(sel),rest=(w||S.cfg.jm)-a,ts=S.tasks[sel]||[];
+let o='';for(let q=15;q<=720;q+=15)o+=`<option value="${q}" ${q==60?'selected':''}>${fmt(q)}</option>`;
+det=`<h2>${DIAS[dow(sel)]} ${+sel.slice(8)} de ${MES[+sel.slice(5,7)-1].toLowerCase()}</h2><div class="card">
+<div class="row sp"><span>Fichado <b>${fmt(w)}</b></span><span>Asignado <b>${fmt(a)}</b></span><span class="${rest>0?'ex':'ok'}">${rest>0?'Pendiente '+fmt(rest):'Completo'}</span></div>
+<label style="margin-top:10px"><input type="checkbox" style="width:auto" ${S.hol[sel]?'checked':''} onchange="hol(this.checked)"> Día festivo (cuenta todo como extra)</label>
+<div class="row" style="margin-top:10px"><div style="flex:2"><label>Proyecto o tarea</label><input id="pj" list="pl" placeholder="Ej. Línea 3 · mantenimiento"><datalist id="pl">${all.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div><div><label>Tiempo</label><select id="dur">${o}</select></div></div>
+<div class="row" style="margin-top:8px"><button class="btn p" onclick="addT(0)">Añadir</button><button class="btn" onclick="addT(1)">Jornada completa</button></div><div class="msg" id="msg"></div>
+${ts.map((x,i)=>`<div class="li"><span>${esc(x.p)}</span><span class="row sp"><b>${fmt(x.m)}</b><button class="x" onclick="delT(${i})">×</button></span></div>`).join('')}</div>`}
+return `<h1>Calendario</h1><p class="sub">Toca un día para asignarle proyectos en bloques de 15 min.</p>${mnav()}<div class="cal">${g}</div>${det}
+<h2>Horas por proyecto</h2><div class="card">${Object.keys(pr).length?Object.entries(pr).sort((a,b)=>b[1]-a[1]).map(([p,m])=>`<div class="li"><span>${esc(p)}</span><b>${fmt(m)}</b></div>`).join(''):'<span class="mut">Todavía no hay tareas este mes.</span>'}</div>`}
+function pick(d){sel=d;render()}
+function hol(v){if(v)S.hol[sel]=1;else delete S.hol[sel];save();render()}
+function addT(full){const p=$('pj').value.trim();if(!p)return say('Escribe el proyecto o tarea.');
+const w=dayMin(sel)||S.cfg.jm;let m=+$('dur').value;
+if(full){m=w-asg(sel);if(m<=0)return say('La jornada ya está completa.')}
+(S.tasks[sel]=S.tasks[sel]||[]).push({p,m});save();render()}
+function delT(i){S.tasks[sel].splice(i,1);if(!S.tasks[sel].length)delete S.tasks[sel];save();render()}
+render();
+setInterval(()=>{const e=$('tm');if(e&&tab=='f'&&S.active)e.textContent=fmt(dayMin(ymd(new Date()))+live())},20000);
+</script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></body></html>
