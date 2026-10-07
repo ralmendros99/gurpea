@@ -2,6 +2,7 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>GURPEA</title>
+<meta name="app-version" content="2">
 <meta name="application-name" content="GURPEA"><meta name="apple-mobile-web-app-title" content="GURPEA">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#000000">
@@ -30,7 +31,7 @@ h2{font:700 20px 'Barlow Condensed',sans-serif;margin:20px 0 8px}
 .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 13px;font:600 15px Barlow,sans-serif;cursor:pointer}
 .btn.p{background:var(--ac);color:var(--onac);border-color:var(--ac)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.row>*{flex:1;min-width:80px}
+.row>*{flex:1 1 90px;min-width:0}
 .sp{justify-content:space-between}.sp>*{flex:0 1 auto}
 input,select{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px;font:16px Barlow,sans-serif}
 label{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
@@ -55,6 +56,9 @@ input.ck{-webkit-appearance:none;appearance:none;width:24px;height:24px;flex:non
 input.ck:checked{background:var(--ac);border-color:var(--ac)}
 input.ck:checked::after{content:'';width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
 .sm>div{padding:2px 0;font-size:14px}.sm .x{font-size:16px;padding:0 4px}
+.row>.cl{flex:0 0 auto;min-width:0;white-space:nowrap;margin-right:14px}
+input,select{min-width:0;max-width:100%}
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:42px;text-align:left}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
