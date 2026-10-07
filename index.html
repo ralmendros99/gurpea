@@ -59,9 +59,30 @@ input.ck:checked::after{content:'';width:6px;height:12px;border:solid #fff;borde
 .row>.cl{flex:0 0 auto;min-width:0;white-space:nowrap;margin-right:14px}
 input,select{min-width:0;max-width:100%}
 input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:42px;text-align:left}
+:root{--bs:clamp(30px,9.5vw,46px)}
+.big{font-size:var(--bs);white-space:nowrap}
+.done{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:calc(var(--bs)/2);line-height:1;color:var(--ex)}
+.col{display:flex;flex-direction:column;min-width:0}
+.ar{margin:0 10px;color:var(--mut)}
+.tb,.pb{border:1px solid var(--line);border-radius:10px;background:#000;color:#fff;display:grid;place-content:center;cursor:pointer;padding:0;font:600 17px Barlow,sans-serif}
+.tb{width:40px;height:40px;flex:none}
+.tb:active,.tb.on{background:var(--ac);border-color:var(--ac)}
+.row>.pb{flex:none;width:96px;height:46px}
+.pb.no{background:var(--ac);border-color:var(--ac)}
+#pop{display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;align-items:center;justify-content:center;background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#pop.show{display:flex}
+.pbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;width:min(86vw,320px);text-align:center}
+.pt{font:700 24px 'Barlow Condensed',sans-serif;margin-bottom:16px}
+.d.t{background:var(--ac);border-color:var(--ac);color:#fff}
+.d.t small{color:#fff}
+.d.t .bar{background:#8f8f8f}.d.t .bar i{background:#fff}
+.d.t.sel{outline-color:#fff}
+.mp{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;-webkit-appearance:none;appearance:none;min-height:0;padding:0;margin:0}
+.hm{display:flex;align-items:center;gap:6px}.hm select{flex:1;min-width:0}.hm span{flex:none;color:var(--mut)}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
+<div id="pop"></div>
 <script>
 const K='mi-jornada-v1';
 let S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
@@ -75,7 +96,8 @@ const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const hm=d=>pad(d.getHours())+':'+pad(d.getMinutes());
 const tm=s=>{const[a,b]=s.split(':');return +a*60+ +b};
 const diff=(a,b)=>{let x=tm(b)-tm(a);return x<0?x+1440:x};
-const fmt=m=>Math.floor(m/60)+'h '+pad(Math.round(m%60));
+const fmt=m=>Math.floor(m/60)+'h '+pad(Math.round(m%60))+'min';
+const fmtc=m=>Math.floor(m/60)+'h:'+pad(Math.round(m%60));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -94,7 +116,7 @@ let ord=0,xl=0,xf=0,xn=0,days=[];
 Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){xf+=w;days.push([d,w,w,1,0])}else{const x=Math.max(0,w-S.cfg.jm),n=Math.min(x,bn[d]||0);ord+=w-x;xl+=x-n;xn+=n;if(x)days.push([d,w,x,0,n])}});
 const tr=S.trips.filter(t=>t.s.startsWith(k)),xs=S.exp.filter(x=>x.d.startsWith(k)),sm=f=>xs.filter(f).reduce((a,x)=>a+x.im,0);
 return{ord,xl,xf,xn,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
-const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichaje'],['c','▦','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','€','Nómina']];
+const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichajes'],['c','▦','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','€','Nómina']];
 function go(t){tab=t;render()}
 function shift(n){mo=new Date(mo.getFullYear(),mo.getMonth()+n,1);sel=null;render()}
 const mnav=()=>`<div class="row sp" style="margin-bottom:10px"><button class="btn" onclick="shift(-1)">‹</button><b style="font:700 20px 'Barlow Condensed'">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><button class="btn" onclick="shift(1)">›</button></div>`;
@@ -106,20 +128,33 @@ $('v').innerHTML={f:vF,x:vX,v:vV,n:vN,c:vC}[tab]();}
 function vF(){const n=new Date(),t=ymd(n),a=S.active;
 const tod=dayMin(t)+(a&&a.d==t?live():0);
 const hoy=S.entries.filter(e=>e.d==t);
-const rec=[...S.entries].sort((x,y)=>(y.d+y.s).localeCompare(x.d+x.s)).slice(0,12);
-return `<h1>${DIAS[n.getDay()]} ${n.getDate()} ${MES[n.getMonth()].toLowerCase()}</h1>
-<p class="sub">Jornada 7:00 – 15:00${isOff(t)?' · hoy es día no laborable: todo cuenta como extra':''}</p>
-<div class="card"><div class="mut">Trabajado hoy</div><div class="big" id="tm">${fmt(tod)}</div>
-${a?`<div class="mut">Entrada a las ${a.s}${a.bs?' · en pausa desde las '+a.bs:''}</div>`:'<div class="mut">Sin fichar</div>'}
+const w0=new Date(n.getFullYear(),n.getMonth(),n.getDate()-((n.getDay()+6)%7)),w1=ymd(new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+6)),rec=[...S.entries].filter(e=>e.d>=ymd(w0)&&e.d<=w1).sort((x,y)=>(y.d+y.s).localeCompare(x.d+x.s));
+return `<h1 style="font-size:clamp(21px,6.6vw,28px)">${DL[n.getDay()]} ${n.getDate()} de ${MES[n.getMonth()]} de ${n.getFullYear()}</h1>
+${isOff(t)?'<p class="sub">Hoy es día no laborable: todo cuenta como extra</p>':''}
+<div class="card"><div class="row" style="flex-wrap:nowrap;align-items:stretch;gap:14px"><div class="col" style="flex:1.3"><div class="mut">Trabajado hoy</div><div class="big" id="tm" style="margin-top:auto">${fmt(tod)}</div></div>
+<div class="col" style="flex:1"><div class="mut">Hora prevista salida</div><div id="pv" style="margin-top:auto">${pvHTML()}</div></div></div>
+${a?`<div class="mut" style="margin-top:8px">Entrada a las ${a.s}${a.bs?' · en pausa desde las '+a.bs:''}</div>`:''}
 <button class="go ${a?'out':''}" onclick="tog()">${a?'Fichar salida':'Fichar entrada'}</button>
 ${a?`<button class="btn" style="width:100%" onclick="pau()">${a.bs?'Reanudar tras la pausa':'Empezar pausa'}</button>`:''}</div>
-${hoy.length?'<h2>Hoy</h2><div class="card">'+hoy.map(li).join('')+'</div>':''}
+${hoy.length?'<h2>Hoy</h2><div class="card">'+hoy.map(e=>li(e)).join('')+'</div>':''}
 <h2>Añadir o corregir un fichaje</h2><div class="card">
 <div class="row"><div><label>Fecha</label><input type="date" id="md" value="${t}"></div></div>
 <div class="row" style="margin-top:8px"><div><label>Entrada</label><input type="time" id="ms" value="07:00"></div><div><label>Salida</label><input type="time" id="me" value="15:00"></div><div><label>Pausa (min)</label><input type="number" id="mb" value="0" min="0" step="5"></div></div>
 <button class="btn p" style="width:100%;margin-top:10px" onclick="addE()">Guardar fichaje</button><div class="msg" id="msg"></div></div>
 ${rec.length?'<h2>Últimos registros</h2><div class="card">'+rec.map(e=>li(e,1)).join('')+'</div>':''}`}
-const li=(e,d)=>`<div class="li"><span>${d?e.d.slice(8)+'/'+e.d.slice(5,7)+' · ':''}${e.s} – ${e.e}${e.br?' · pausa '+e.br+'m':''}</span><span class="row sp"><b>${fmt(ent(e))}</b><button class="x" onclick="delE(${e.id})">×</button></span></div>`;
+const DL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const TR='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/></svg>';
+const li=(e,d)=>`<div class="li"><span>${d?e.d.slice(8)+'/'+e.d.slice(5,7)+'<span class="ar">&rarr;</span>':''}${e.s} - ${e.e}</span><span class="row sp"><b>${fmt(ent(e))}</b><button class="tb" aria-label="Eliminar fichaje" onclick="askDel(${e.id},this)">${TR}</button></span></div>`;
+function todMin(){const t=ymd(new Date()),a=S.active;return dayMin(t)+(a&&a.d==t?live():0)}
+function pvHTML(){const n=new Date(),t=ymd(n),a=S.active,tod=todMin(),jm=S.cfg.jm,work=a&&!a.bs;
+if(tod>=jm&&!work)return '<div class="done">JORNADA YA<br>COMPLETADA</div>';
+if(!a&&!dayMin(t))return '<div class="big">--:--</div>';
+const m=((n.getHours()*60+n.getMinutes()+jm-tod)%1440+1440)%1440;
+return '<div class="big">'+pad(Math.floor(m/60))+':'+pad(m%60)+'</div>'}
+let pend=null;
+function askDel(id,b){pend=id;b.classList.add('on');$('pop').innerHTML='<div class="pbox"><div class="pt">¿Eliminar fichaje?</div><div class="row" style="justify-content:center;gap:12px;flex-wrap:nowrap"><button class="pb" onclick="yesD()">Sí</button><button class="pb no" onclick="noD()">No</button></div></div>';$('pop').className='show'}
+function noD(){pend=null;$('pop').className='';document.querySelectorAll('.tb.on').forEach(b=>b.classList.remove('on'))}
+function yesD(){const i=pend;noD();delE(i)}
 function tog(){const n=new Date();if(!S.active)S.active={d:ymd(n),s:hm(n),br:0,bs:null};else{const a=S.active;if(a.bs){a.br+=diff(a.bs,hm(n));a.bs=null}S.entries.push({id:Date.now(),d:a.d,s:a.s,e:hm(n),br:a.br});S.active=null}save();render()}
 function pau(){const a=S.active,n=hm(new Date());if(a.bs){a.br+=diff(a.bs,n);a.bs=null}else a.bs=n;save();render()}
 function addE(){const d=$('md').value,s=$('ms').value,e=$('me').value,b=+$('mb').value||0;
@@ -219,30 +254,39 @@ function cfg(k,v){S.cfg[k]=+v||0;save();render()}
 function bk(){const j=JSON.stringify(S);$('bk').value=j;try{navigator.clipboard.writeText(j).then(()=>say('Copiado. Pégalo en una nota o mensaje y guárdalo.'),()=>say('Selecciona el texto y cópialo a mano.'))}catch(e){say('Selecciona el texto y cópialo a mano.')}}
 function rs(){try{const o=JSON.parse($('bk').value);if(!o.entries)throw 0;S=Object.assign(S,o);save();render()}catch(e){say('El texto no es una copia válida.')}}
 /* CALENDARIO */
+const mnavC=()=>`<div class="row sp" style="margin:10px 0"><button class="btn" onclick="shift(-1)">‹</button><span style="position:relative;display:inline-block"><b style="font:700 20px 'Barlow Condensed'">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><input type="month" class="mp" value="${ym()}" onclick="try{this.showPicker()}catch(e){}" onchange="setMo(this.value)"></span><button class="btn" onclick="shift(1)">›</button></div>`;
+const hmSel=(id,v)=>{const m=Math.floor(tm(v)/15)*15,h=Math.floor(m/60),mi=m%60;return `<div class="hm"><select id="${id}h">${Array.from({length:24},(_,i)=>`<option ${i==h?'selected':''}>${pad(i)}</option>`).join('')}</select><span>:</span><select id="${id}m">${[0,15,30,45].map(q=>`<option ${q==mi?'selected':''}>${pad(q)}</option>`).join('')}</select></div>`};
+function setMo(v){if(!v)return;const a=v.split('-');mo=new Date(+a[0],+a[1]-1,1);sel=null;render()}
 function vC(){const y=mo.getFullYear(),m=mo.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,nd=new Date(y,m+1,0).getDate(),t=ymd(new Date());
 let g=['L','M','X','J','V','S','D'].map(x=>`<div class="h">${x}</div>`).join('')+'<div></div>'.repeat(first);
 for(let i=1;i<=nd;i++){const d=y+'-'+pad(m+1)+'-'+pad(i),w=dayMin(d),a=asg(d),p=w?Math.min(100,a/w*100):(a?100:0);
-g+=`<button class="d ${isOff(d)?'off':''} ${S.hol[d]?'hol':''} ${d==sel?'sel':''} ${d==t?'t':''}" onclick="pick('${d}')"><span>${i}</span><span><small>${w?fmt(w).replace(' ',':'):''}</small><div class="bar"><i style="width:${p}%"></i></div></span></button>`}
+g+=`<button class="d ${isOff(d)?'off':''} ${S.hol[d]?'hol':''} ${d==sel?'sel':''} ${d==t?'t':''}" onclick="pick('${d}')"><span>${i}</span><span><small>${w?fmtc(w):''}</small><div class="bar"><i style="width:${p}%"></i></div></span></button>`}
 const k=ym(),pr={};Object.keys(S.tasks).filter(d=>d.startsWith(k)).forEach(d=>S.tasks[d].forEach(x=>pr[x.p]=(pr[x.p]||0)+x.m));
 const all=[...new Set(Object.values(S.tasks).flat().map(x=>x.p))];
 let det='';
 if(sel){const w=dayMin(sel),a=asg(sel),rest=(w||S.cfg.jm)-a,ts=S.tasks[sel]||[];
-let o='';for(let q=15;q<=720;q+=15)o+=`<option value="${q}" ${q==60?'selected':''}>${fmt(q)}</option>`;
-det=`<h2>${DIAS[dow(sel)]} ${+sel.slice(8)} de ${MES[+sel.slice(5,7)-1].toLowerCase()}</h2><div class="card">
+const lf=[...ts].reverse().find(x=>x.f),di=lf?lf.f:'07:00',mm=Math.min(1439,tm(di)+60),df=pad(Math.floor(mm/60))+':'+pad(mm%60);
+det=`<h1 style="font-size:clamp(21px,6.6vw,28px);margin:20px 0 8px">${DL[dow(sel)]} ${+sel.slice(8)} de ${MES[+sel.slice(5,7)-1]} de ${sel.slice(0,4)}</h1><div class="card">
 <div class="row sp"><span>Fichado <b>${fmt(w)}</b></span><span>Asignado <b>${fmt(a)}</b></span><span class="${rest>0?'ex':'ok'}">${rest>0?'Pendiente '+fmt(rest):'Completo'}</span></div>
-<label style="margin-top:10px"><input type="checkbox" style="width:auto" ${S.hol[sel]?'checked':''} onchange="hol(this.checked)"> Día festivo (cuenta todo como extra)</label>
-<div class="row" style="margin-top:10px"><div style="flex:2"><label>Proyecto o tarea</label><input id="pj" list="pl" placeholder="Ej. Línea 3 · mantenimiento"><datalist id="pl">${all.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div><div><label>Tiempo</label><select id="dur">${o}</select></div></div>
-<div class="row" style="margin-top:8px"><button class="btn p" onclick="addT(0)">Añadir</button><button class="btn" onclick="addT(1)">Jornada completa</button></div><div class="msg" id="msg"></div>
-${ts.map((x,i)=>`<div class="li"><span>${esc(x.p)}</span><span class="row sp"><b>${fmt(x.m)}</b><button class="x" onclick="delT(${i})">×</button></span></div>`).join('')}</div>`}
-return `<h1>Calendario</h1><p class="sub">Toca un día para asignarle proyectos en bloques de 15 min.</p>${mnav()}<div class="cal">${g}</div>${det}
+<div style="margin-top:10px"><label>Proyecto o tarea</label><input id="pj" list="pl" placeholder="Ej. 400001 - Horas estructura"><datalist id="pl">${all.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
+<div class="row" style="margin-top:8px"><div><label>Hora inicio</label>${hmSel('tI',di)}</div><div><label>Hora final</label>${hmSel('tF',df)}</div></div>
+<div class="row" style="margin-top:8px"><button class="btn p" onclick="addT(0)">Añadir</button><button class="btn" onclick="addT(1)">Jornada completa</button></div>
+<label class="cl" style="margin-top:12px"><input type="checkbox" class="ck" ${S.hol[sel]?'checked':''} onchange="hol(this.checked)"> Día festivo (cuenta todo como extra)</label><div class="msg" id="msg"></div>
+${ts.map((x,i)=>`<div class="li"><span>${esc(x.p)}</span><span class="row sp"><b>${x.s?x.s+' - '+x.f:fmt(x.m)}</b><button class="tb" aria-label="Eliminar tarea" onclick="askDelT(${i},this)">${TR}</button></span></div>`).join('')}</div>`}
+return `<h1>Calendario</h1>${mnavC()}<div class="cal">${g}</div>${det}
 <h2>Horas por proyecto</h2><div class="card">${Object.keys(pr).length?Object.entries(pr).sort((a,b)=>b[1]-a[1]).map(([p,m])=>`<div class="li"><span>${esc(p)}</span><b>${fmt(m)}</b></div>`).join(''):'<span class="mut">Todavía no hay tareas este mes.</span>'}</div>`}
 function pick(d){sel=d;render()}
 function hol(v){if(v)S.hol[sel]=1;else delete S.hol[sel];save();render()}
 function addT(full){const p=$('pj').value.trim();if(!p)return say('Escribe el proyecto o tarea.');
-const w=dayMin(sel)||S.cfg.jm;let m=+$('dur').value;
-if(full){m=w-asg(sel);if(m<=0)return say('La jornada ya está completa.')}
-(S.tasks[sel]=S.tasks[sel]||[]).push({p,m});save();render()}
+let s=$('tIh').value+':'+$('tIm').value,f=$('tFh').value+':'+$('tFm').value,m;
+if(full){const es=S.entries.filter(e=>e.d==sel).sort((a,b)=>a.s.localeCompare(b.s)),w=dayMin(sel)||S.cfg.jm;m=w-asg(sel);if(m<=0)return say('La jornada ya está completa.');
+const e0=tm('07:00')+S.cfg.jm;s=es.length?es[0].s:'07:00';f=es.length?es[es.length-1].e:pad(Math.floor(e0/60))+':'+pad(e0%60)}
+else{if(!s||!f)return say('Indica hora de inicio y hora final.');m=tm(f)-tm(s);if(m<=0)return say('La hora final debe ser posterior a la de inicio.');}
+const L=S.tasks[sel]=S.tasks[sel]||[];L.push({p,s,f,m});L.sort((a,b)=>(a.s||'99').localeCompare(b.s||'99'));save();render()}
+function askDelT(i,b){pend=i;b.classList.add('on');$('pop').innerHTML='<div class="pbox"><div class="pt">¿Eliminar proyecto/tarea?</div><div class="row" style="justify-content:center;gap:12px;flex-wrap:nowrap"><button class="pb" onclick="yesT()">Sí</button><button class="pb no" onclick="noD()">No</button></div></div>';$('pop').className='show'}
+function yesT(){const i=pend;noD();delT(i)}
 function delT(i){S.tasks[sel].splice(i,1);if(!S.tasks[sel].length)delete S.tasks[sel];save();render()}
 render();
-setInterval(()=>{const e=$('tm');if(e&&tab=='f'&&S.active)e.textContent=fmt(dayMin(ymd(new Date()))+live())},20000);
+$('pop').onclick=e=>{if(e.target.id=='pop')noD()};
+setInterval(()=>{const e=$('tm');if(e&&tab=='f'){e.textContent=fmt(todMin());$('pv').innerHTML=pvHTML()}},20000);
 </script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script></body></html>
