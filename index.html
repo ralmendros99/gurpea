@@ -79,6 +79,9 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 .d.t.sel{outline-color:#fff}
 .mp{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;-webkit-appearance:none;appearance:none;min-height:0;padding:0;margin:0}
 .hm{display:flex;align-items:center;gap:6px}.hm select{flex:1;min-width:0}.hm span{flex:none;color:var(--mut)}
+.cal{grid-template-columns:repeat(7,minmax(0,1fr))}
+.d{overflow:hidden}
+.d small{white-space:nowrap;letter-spacing:-.2px;font-size:clamp(6.5px,2.1vw,9px)}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
@@ -106,7 +109,9 @@ const isOff=d=>dow(d)%6==0||!!S.hol[d];
 const ent=e=>Math.max(0,diff(e.s,e.e)-e.br);
 const nm=e=>{const a=tm(e.s),b=a+diff(e.s,e.e),o=(x,y)=>Math.max(0,Math.min(b,y)-Math.max(a,x));return Math.min(ent(e),o(0,360)+o(1320,1800))};
 const dayMin=d=>S.entries.filter(e=>e.d==d).reduce((a,e)=>a+ent(e),0);
-const asg=d=>(S.tasks[d]||[]).reduce((a,t)=>a+t.m,0);
+const dm=d=>Math.floor(dayMin(d)/15)*15;
+const tks=d=>S.entries.some(e=>e.d==d)?(S.tasks[d]||[]):[];
+const asg=d=>tks(d).reduce((a,t)=>a+t.m,0);
 function live(){const a=S.active;if(!a)return 0;const n=hm(new Date());return Math.max(0,diff(a.s,n)-a.br-(a.bs?diff(a.bs,n):0))}
 let tab='f',mo=new Date(new Date().getFullYear(),new Date().getMonth(),1),sel=null;
 const ym=()=>mo.getFullYear()+'-'+pad(mo.getMonth()+1);
@@ -117,7 +122,7 @@ Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){xf+=w;days.push([d
 const tr=S.trips.filter(t=>t.s.startsWith(k)),xs=S.exp.filter(x=>x.d.startsWith(k)),sm=f=>xs.filter(f).reduce((a,x)=>a+x.im,0);
 return{ord,xl,xf,xn,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
 const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichajes'],['c','▦','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','€','Nómina']];
-function go(t){tab=t;render()}
+function go(t){if(t!=tab)sel=null;tab=t;render()}
 function shift(n){mo=new Date(mo.getFullYear(),mo.getMonth()+n,1);sel=null;render()}
 const mnav=()=>`<div class="row sp" style="margin-bottom:10px"><button class="btn" onclick="shift(-1)">‹</button><b style="font:700 20px 'Barlow Condensed'">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><button class="btn" onclick="shift(1)">›</button></div>`;
 const say=t=>{const m=$('msg');if(m)m.textContent=t};
@@ -128,7 +133,7 @@ $('v').innerHTML={f:vF,x:vX,v:vV,n:vN,c:vC}[tab]();}
 function vF(){const n=new Date(),t=ymd(n),a=S.active;
 const tod=dayMin(t)+(a&&a.d==t?live():0);
 const hoy=S.entries.filter(e=>e.d==t);
-const w0=new Date(n.getFullYear(),n.getMonth(),n.getDate()-((n.getDay()+6)%7)),w1=ymd(new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+6)),rec=[...S.entries].filter(e=>e.d>=ymd(w0)&&e.d<=w1).sort((x,y)=>(y.d+y.s).localeCompare(x.d+x.s));
+const w0=new Date(n.getFullYear(),n.getMonth(),n.getDate()-((n.getDay()+6)%7)),w1=ymd(new Date(w0.getFullYear(),w0.getMonth(),w0.getDate()+6)),rec=[...S.entries].filter(e=>e.d>=ymd(w0)&&e.d<=w1).sort((x,y)=>(x.d+x.s).localeCompare(y.d+y.s)),mon=[...S.entries].filter(e=>e.d.startsWith(fmo.getFullYear()+'-'+pad(fmo.getMonth()+1))).sort((x,y)=>(x.d+x.s).localeCompare(y.d+y.s));
 return `<h1 style="font-size:clamp(21px,6.6vw,28px)">${DL[n.getDay()]} ${n.getDate()} de ${MES[n.getMonth()]} de ${n.getFullYear()}</h1>
 ${isOff(t)?'<p class="sub">Hoy es día no laborable: todo cuenta como extra</p>':''}
 <div class="card"><div class="row" style="flex-wrap:nowrap;align-items:stretch;gap:14px"><div class="col" style="flex:1.3"><div class="mut">Trabajado hoy</div><div class="big" id="tm" style="margin-top:auto">${fmt(tod)}</div></div>
@@ -141,10 +146,13 @@ ${hoy.length?'<h2>Hoy</h2><div class="card">'+hoy.map(e=>li(e)).join('')+'</div>
 <div class="row"><div><label>Fecha</label><input type="date" id="md" value="${t}"></div></div>
 <div class="row" style="margin-top:8px"><div><label>Entrada</label><input type="time" id="ms" value="07:00"></div><div><label>Salida</label><input type="time" id="me" value="15:00"></div><div><label>Pausa (min)</label><input type="number" id="mb" value="0" min="0" step="5"></div></div>
 <button class="btn p" style="width:100%;margin-top:10px" onclick="addE()">Guardar fichaje</button><div class="msg" id="msg"></div></div>
-${rec.length?'<h2>Últimos registros</h2><div class="card">'+rec.map(e=>li(e,1)).join('')+'</div>':''}`}
+${rec.length?'<h2>Esta semana</h2><div class="card">'+rec.map(e=>li(e,1)).join('')+'</div>':''}
+<div class="row sp" style="margin:20px 0 8px"><button class="btn" onclick="fShift(-1)">‹</button><b style="font:700 20px 'Barlow Condensed',sans-serif">${MES[fmo.getMonth()]} ${fmo.getFullYear()}</b><button class="btn" onclick="fShift(1)">›</button></div><div class="card">${mon.length?mon.map(e=>li(e,1)).join(''):'<span class="mut">Sin fichajes este mes.</span>'}</div>`}
 const DL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const TR='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/></svg>';
 const li=(e,d)=>`<div class="li"><span>${d?e.d.slice(8)+'/'+e.d.slice(5,7)+'<span class="ar">&rarr;</span>':''}${e.s} - ${e.e}</span><span class="row sp"><b>${fmt(ent(e))}</b><button class="tb" aria-label="Eliminar fichaje" onclick="askDel(${e.id},this)">${TR}</button></span></div>`;
+let fmo=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+function fShift(n){fmo=new Date(fmo.getFullYear(),fmo.getMonth()+n,1);render()}
 function todMin(){const t=ymd(new Date()),a=S.active;return dayMin(t)+(a&&a.d==t?live():0)}
 function pvHTML(){const n=new Date(),t=ymd(n),a=S.active,tod=todMin(),jm=S.cfg.jm,work=a&&!a.bs;
 if(tod>=jm&&!work)return '<div class="done">JORNADA YA<br>COMPLETADA</div>';
@@ -160,13 +168,13 @@ function pau(){const a=S.active,n=hm(new Date());if(a.bs){a.br+=diff(a.bs,n);a.b
 function addE(){const d=$('md').value,s=$('ms').value,e=$('me').value,b=+$('mb').value||0;
 if(!d||!s||!e)return say('Rellena fecha, entrada y salida.');
 S.entries.push({id:Date.now(),d,s,e,br:b});save();render()}
-function delE(id){S.entries=S.entries.filter(e=>e.id!=id);save();render()}
+function delE(id){const r=S.entries.find(x=>x.id==id);S.entries=S.entries.filter(e=>e.id!=id);if(r&&!S.entries.some(x=>x.d==r.d))delete S.tasks[r.d];save();render()}
 /* EXTRAS */
 function vX(){const s=stats();
-return `<h1>Horas extra</h1><p class="sub">Todo lo que supera 8 h en día laborable, más fines de semana y festivos. Las horas entre 22:00 y 6:00 cuentan como nocturnas.</p>${mnav()}
+return `<h1>Horas extra</h1><p class="sub">Todo lo que supera 8 h en día laborable, más fines de semana y festivos.<br>Las horas entre 22:00 y 6:00 cuentan como nocturnas.</p>${mnav()}
 <div class="grid"><div class="card"><div class="mut">Extra normales</div><div class="n ex">${fmt(s.xl)}</div></div>
 <div class="card"><div class="mut">Extra nocturnas/festivas</div><div class="n ex">${fmt(s.xf+s.xn)}</div></div></div>
-<h2>Días con extra</h2><div class="card">${s.days.length?s.days.map(([d,w,x,f,n])=>`<div class="li"><span>${DIAS[dow(d)]} ${d.slice(8)}/${d.slice(5,7)}${f?' <span class="mut">(no laborable)</span>':''}${n?' <span class="mut">('+fmt(n)+' nocturnas)</span>':''}</span><span><span class="mut">${fmt(w)} trabajadas · </span><b class="ex">+${fmt(x)}</b></span></div>`).join(''):'<span class="mut">Sin horas extra este mes.</span>'}</div>`}
+<h2>Días con extra</h2><div class="card">${s.days.length?s.days.map(([d,w,x,f,n])=>`<div class="li"><span>${DL[dow(d)]} ${d.slice(8)}/${d.slice(5,7)}${f?'<span class="mut" style="margin-left:8px">(no laborable)</span>':''}${n?' <span class="mut">('+fmt(n)+' nocturnas)</span>':''}</span><span><span class="mut">${fmt(w)} trabajadas · </span><b class="ex">+${fmt(x)}</b></span></div>`).join(''):'<span class="mut">Sin horas extra este mes.</span>'}</div>`}
 /* VIAJES */
 const DT={dmn:'Media dieta nacional',dcn:'Dieta completa nacional',dmi:'Media dieta internacional',dci:'Dieta completa internacional',pn:'Pernocta nacional',pi:'Pernocta internacional'};
 const sayI=(t,i)=>{const m=$(i);if(m)m.textContent=t};
@@ -183,7 +191,7 @@ const inT=(t,d)=>d>=t.s&&(t.cur||d<=t.e);
 const tripOf=d=>S.trips.filter(t=>inT(t,d)).sort((a,b)=>b.s.localeCompare(a.s))[0];
 function pern(t){if(!t.pn)return{n:0,im:0};const e=t.cur?ymd(new Date()):t.e,n=Math.max(0,Math.round((new Date(e+'T12:00')-new Date(t.s+'T12:00'))/864e5));return{n,im:n*(t.nat?S.cfg.pn:S.cfg.pi)}}
 const pay=x=>`<span class="tag ${x.pay=='p'?'r':''}">Tarjeta ${x.pay=='p'?'particular':'de empresa'}</span>`;
-const xl=(x,m)=>`<div>${x.k=='d'?'Dieta':'Gasto vario'}: ${m?fm(x.d)+' · ':''}${esc(x.c)}${x.k=='g'?' '+eur(x.im):''} ${pay(x)}<button class="x" onclick="delX(${x.id})">×</button></div>`;
+const xl=(x,m)=>`<div>${x.k=='d'?'Dieta':'Gasto vario'}: ${m?fm(x.d)+' · ':''}${esc(x.c)}${x.k=='g'?' '+eur(x.im):''} ${pay(x)}<button class="x" onclick="askXp(${x.id},this)">×</button></div>`;
 function blk(t){const m=t.cur||t.e!=t.s,xs=S.exp.filter(x=>tripOf(x.d)===t).sort((a,b)=>a.d.localeCompare(b.d)),pe=pern(t),n=new Date();
 return `<div class="li" style="align-items:flex-start"><div style="flex:1"><b>${fd(t.s)}${t.st?' '+t.st:''} salida - ${t.cur?'llegada por definir':fd(t.e)+(t.et?' '+t.et:'')+' llegada'}</b><div class="sm" style="padding-left:14px">
 <div>Destino: ${esc(t.c)}${t.p?' ('+esc(t.p)+')':''}</div>${t.km?`<div>Km: ${t.km}</div>`:''}
@@ -191,7 +199,7 @@ ${xs.filter(x=>x.k=='d').map(x=>xl(x,m)).join('')}${t.di?`<div>Dietas anteriores
 ${t.pn?`<div>Pernocta: ${pe.n} ${pe.n==1?'noche':'noches'} ${t.nat?'nacional':'internacional'} · ${eur(pe.im)}${t.cur?' (hasta hoy)':''}</div>`:''}
 ${xs.filter(x=>x.k=='g').map(x=>xl(x,m)).join('')}
 ${t.cur?`<div class="row" style="margin-top:8px"><label class="cl"><input type="checkbox" class="ck" checked onchange="closeT(${t.id})"> En curso</label><input type="date" id="ce${t.id}" value="${ymd(n)}"><input type="time" id="ct${t.id}" value="${hm(n)}"></div><div class="mut" style="font-size:12px">Desmarca “En curso” para cerrar el viaje con esa llegada.</div>`:''}
-</div></div><button class="x" onclick="delV(${t.id})">×</button></div>`}
+</div></div><button class="tb" aria-label="Eliminar viaje" onclick="askVj(${t.id},this)">${TR}</button></div>`}
 function vV(){const s=stats(),t=ymd(new Date()),it=[];
 s.tr.forEach(r=>it.push([r.s+' '+(r.st||'00:00'),blk(r)]));
 const by={};s.xs.filter(x=>!tripOf(x.d)).forEach(x=>(by[x.d]=by[x.d]||[]).push(x));
@@ -227,7 +235,7 @@ S.exp.push({id:Date.now(),d,k:'d',c:DT[k],im,pay:$('dp').value});save();render()
 function addG(){const c=$('gc').value.trim(),d=$('gd').value,im=+$('gi').value;
 if(!c||!d||!im)return sayI('Indica fecha, concepto e importe.','msgg');
 S.exp.push({id:Date.now(),d,k:'g',c,im,pay:$('gy').value});save();render()}
-function delV(id){S.trips=S.trips.filter(t=>t.id!=id);save();render()}
+function delV(id){const t=S.trips.find(x=>x.id==id);if(t)S.exp=S.exp.filter(x=>tripOf(x.d)!==t);S.trips=S.trips.filter(x=>x.id!=id);save();render()}
 function delX(id){S.exp=S.exp.filter(x=>x.id!=id);save();render()}
 /* NÓMINA */
 const eur=n=>n.toFixed(2)+' €';
@@ -259,15 +267,15 @@ const hmSel=(id,v)=>{const m=Math.floor(tm(v)/15)*15,h=Math.floor(m/60),mi=m%60;
 function setMo(v){if(!v)return;const a=v.split('-');mo=new Date(+a[0],+a[1]-1,1);sel=null;render()}
 function vC(){const y=mo.getFullYear(),m=mo.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,nd=new Date(y,m+1,0).getDate(),t=ymd(new Date());
 let g=['L','M','X','J','V','S','D'].map(x=>`<div class="h">${x}</div>`).join('')+'<div></div>'.repeat(first);
-for(let i=1;i<=nd;i++){const d=y+'-'+pad(m+1)+'-'+pad(i),w=dayMin(d),a=asg(d),p=w?Math.min(100,a/w*100):(a?100:0);
-g+=`<button class="d ${isOff(d)?'off':''} ${S.hol[d]?'hol':''} ${d==sel?'sel':''} ${d==t?'t':''}" onclick="pick('${d}')"><span>${i}</span><span><small>${w?fmtc(w):''}</small><div class="bar"><i style="width:${p}%"></i></div></span></button>`}
-const k=ym(),pr={};Object.keys(S.tasks).filter(d=>d.startsWith(k)).forEach(d=>S.tasks[d].forEach(x=>pr[x.p]=(pr[x.p]||0)+x.m));
-const all=[...new Set(Object.values(S.tasks).flat().map(x=>x.p))];
+for(let i=1;i<=nd;i++){const d=y+'-'+pad(m+1)+'-'+pad(i),w=dm(d),a=asg(d),p=w?Math.min(100,a/w*100):(a?100:0);
+g+=`<button class="d ${isOff(d)?'off':''} ${S.hol[d]?'hol':''} ${d==sel?'sel':''} ${d==t?'t':''}" onclick="pick('${d}')"><span>${i}</span><span><small>${w?fmt(w):''}</small><div class="bar"><i style="width:${p}%"></i></div></span></button>`}
+const k=ym(),pr={};Object.keys(S.tasks).filter(d=>d.startsWith(k)).forEach(d=>tks(d).forEach(x=>pr[x.p]=(pr[x.p]||0)+x.m));
+const all=[...new Set(Object.keys(S.tasks).flatMap(d=>tks(d)).map(x=>x.p))];
 let det='';
-if(sel){const w=dayMin(sel),a=asg(sel),rest=(w||S.cfg.jm)-a,ts=S.tasks[sel]||[];
+if(sel){const w=dm(sel),a=asg(sel),rest=(w||S.cfg.jm)-a,ts=tks(sel);
 const lf=[...ts].reverse().find(x=>x.f),di=lf?lf.f:'07:00',mm=Math.min(1439,tm(di)+60),df=pad(Math.floor(mm/60))+':'+pad(mm%60);
 det=`<h1 style="font-size:clamp(21px,6.6vw,28px);margin:20px 0 8px">${DL[dow(sel)]} ${+sel.slice(8)} de ${MES[+sel.slice(5,7)-1]} de ${sel.slice(0,4)}</h1><div class="card">
-<div class="row sp"><span>Fichado <b>${fmt(w)}</b></span><span>Asignado <b>${fmt(a)}</b></span><span class="${rest>0?'ex':'ok'}">${rest>0?'Pendiente '+fmt(rest):'Completo'}</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px"><span>Fichado <b>${fmt(w)}</b></span><span style="text-align:right">Asignado <b>${fmt(a)}</b></span><span></span>${w?`<span class="${rest>0?'ex':'ok'}" style="text-align:right">${rest>0?'Pendiente '+fmt(rest):'Completo'}</span>`:'<span></span>'}</div>
 <div style="margin-top:10px"><label>Proyecto o tarea</label><input id="pj" list="pl" placeholder="Ej. 400001 - Horas estructura"><datalist id="pl">${all.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
 <div class="row" style="margin-top:8px"><div><label>Hora inicio</label>${hmSel('tI',di)}</div><div><label>Hora final</label>${hmSel('tF',df)}</div></div>
 <div class="row" style="margin-top:8px"><button class="btn p" onclick="addT(0)">Añadir</button><button class="btn" onclick="addT(1)">Jornada completa</button></div>
@@ -278,12 +286,18 @@ return `<h1>Calendario</h1>${mnavC()}<div class="cal">${g}</div>${det}
 function pick(d){sel=d;render()}
 function hol(v){if(v)S.hol[sel]=1;else delete S.hol[sel];save();render()}
 function addT(full){const p=$('pj').value.trim();if(!p)return say('Escribe el proyecto o tarea.');
+if(!S.entries.some(e=>e.d==sel))return say('Ese día no tiene fichajes. Añade primero un fichaje en la pestaña Fichajes.');
 let s=$('tIh').value+':'+$('tIm').value,f=$('tFh').value+':'+$('tFm').value,m;
-if(full){const es=S.entries.filter(e=>e.d==sel).sort((a,b)=>a.s.localeCompare(b.s)),w=dayMin(sel)||S.cfg.jm;m=w-asg(sel);if(m<=0)return say('La jornada ya está completa.');
-const e0=tm('07:00')+S.cfg.jm;s=es.length?es[0].s:'07:00';f=es.length?es[es.length-1].e:pad(Math.floor(e0/60))+':'+pad(e0%60)}
+if(full){const es=S.entries.filter(e=>e.d==sel).sort((a,b)=>a.s.localeCompare(b.s)),w=dm(sel);m=w-asg(sel);if(m<=0)return say('La jornada ya está completa.');
+const lt=(S.tasks[sel]||[]).filter(x=>x.f).map(x=>tm(x.f)),b0=Math.min(1439,lt.length?Math.max(...lt):(es.length?tm(es[0].s):420)+asg(sel)),e1=Math.min(1439,b0+m),T=x=>pad(Math.floor(x/60))+':'+pad(x%60);s=T(b0);f=T(e1)}
 else{if(!s||!f)return say('Indica hora de inicio y hora final.');m=tm(f)-tm(s);if(m<=0)return say('La hora final debe ser posterior a la de inicio.');}
 const L=S.tasks[sel]=S.tasks[sel]||[];L.push({p,s,f,m});L.sort((a,b)=>(a.s||'99').localeCompare(b.s||'99'));save();render()}
 function askDelT(i,b){pend=i;b.classList.add('on');$('pop').innerHTML='<div class="pbox"><div class="pt">¿Eliminar proyecto/tarea?</div><div class="row" style="justify-content:center;gap:12px;flex-wrap:nowrap"><button class="pb" onclick="yesT()">Sí</button><button class="pb no" onclick="noD()">No</button></div></div>';$('pop').className='show'}
+let pfn=null;
+function askX(title,fn,b){pfn=fn;if(b&&b.classList.contains('tb'))b.classList.add('on');$('pop').innerHTML='<div class="pbox"><div class="pt">'+title+'</div><div class="row" style="justify-content:center;gap:12px;flex-wrap:nowrap"><button class="pb" onclick="yesX()">Sí</button><button class="pb no" onclick="noD()">No</button></div></div>';$('pop').className='show'}
+function yesX(){const f=pfn;noD();if(f)f()}
+function askVj(id,b){askX('¿Eliminar el viaje completo?',()=>delV(id),b)}
+function askXp(id,b){const x=S.exp.find(z=>z.id==id);if(x)askX('¿Eliminar '+(x.k=='d'?'la dieta':esc(x.c))+'?',()=>delX(id),b)}
 function yesT(){const i=pend;noD();delT(i)}
 function delT(i){S.tasks[sel].splice(i,1);if(!S.tasks[sel].length)delete S.tasks[sel];save();render()}
 render();
