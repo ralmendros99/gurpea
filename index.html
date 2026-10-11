@@ -82,6 +82,10 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 .cal{grid-template-columns:repeat(7,minmax(0,1fr))}
 .d{overflow:hidden}
 .d small{white-space:nowrap;letter-spacing:-.2px;font-size:clamp(6.5px,2.1vw,9px)}
+.xr{display:flex;align-items:baseline}.xd{flex:none;margin-right:.3em;font-variant-numeric:tabular-nums}.xa{flex:none;margin-right:.3em;color:var(--mut)}.xt{flex:1;min-width:0}
+.sm .tag{white-space:nowrap}
+.gd{display:grid;grid-template-columns:1fr 1fr;gap:8px}.gd>*{min-width:0}.gd input,.gd select{height:44px;box-sizing:border-box}
+.xg{white-space:nowrap}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
@@ -118,7 +122,8 @@ const ym=()=>mo.getFullYear()+'-'+pad(mo.getMonth()+1);
 function stats(){const k=ym(),by={};
 const bn={};S.entries.filter(e=>e.d.startsWith(k)).forEach(e=>{by[e.d]=(by[e.d]||0)+ent(e);bn[e.d]=(bn[e.d]||0)+nm(e)});
 let ord=0,xl=0,xf=0,xn=0,days=[];
-Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){xf+=w;days.push([d,w,w,1,0])}else{const x=Math.max(0,w-S.cfg.jm),n=Math.min(x,bn[d]||0);ord+=w-x;xl+=x-n;xn+=n;if(x)days.push([d,w,x,0,n])}});
+const q=m=>Math.floor(m/15)*15;
+Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){const e=q(w);xf+=e;if(e)days.push([d,w,e,1,0])}else{const x=Math.max(0,w-S.cfg.jm),xq=q(x),n=Math.min(xq,q(bn[d]||0));ord+=w-x;xl+=xq-n;xn+=n;if(xq)days.push([d,w,xq,0,n])}});
 const tr=S.trips.filter(t=>t.s.startsWith(k)),xs=S.exp.filter(x=>x.d.startsWith(k)),sm=f=>xs.filter(f).reduce((a,x)=>a+x.im,0);
 return{ord,xl,xf,xn,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
 const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichajes'],['c','▦','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','€','Nómina']];
@@ -191,22 +196,23 @@ const inT=(t,d)=>d>=t.s&&(t.cur||d<=t.e);
 const tripOf=d=>S.trips.filter(t=>inT(t,d)).sort((a,b)=>b.s.localeCompare(a.s))[0];
 function pern(t){if(!t.pn)return{n:0,im:0};const e=t.cur?ymd(new Date()):t.e,n=Math.max(0,Math.round((new Date(e+'T12:00')-new Date(t.s+'T12:00'))/864e5));return{n,im:n*(t.nat?S.cfg.pn:S.cfg.pi)}}
 const pay=x=>`<span class="tag ${x.pay=='p'?'r':''}">Tarjeta ${x.pay=='p'?'particular':'de empresa'}</span>`;
-const xl=(x,m)=>`<div>${x.k=='d'?'Dieta':'Gasto vario'}: ${m?fm(x.d)+' · ':''}${esc(x.c)}${x.k=='g'?' '+eur(x.im):''} ${pay(x)}<button class="x" onclick="askXp(${x.id},this)">×</button></div>`;
-function blk(t){const m=t.cur||t.e!=t.s,xs=S.exp.filter(x=>tripOf(x.d)===t).sort((a,b)=>a.d.localeCompare(b.d)),pe=pern(t),n=new Date();
-return `<div class="li" style="align-items:flex-start"><div style="flex:1"><b>${fd(t.s)}${t.st?' '+t.st:''} salida - ${t.cur?'llegada por definir':fd(t.e)+(t.et?' '+t.et:'')+' llegada'}</b><div class="sm" style="padding-left:14px">
-<div>Destino: ${esc(t.c)}${t.p?' ('+esc(t.p)+')':''}</div>${t.km?`<div>Km: ${t.km}</div>`:''}
-${xs.filter(x=>x.k=='d').map(x=>xl(x,m)).join('')}${t.di?`<div>Dietas anteriores: ${eur(t.di)}</div>`:''}
-${t.pn?`<div>Pernocta: ${pe.n} ${pe.n==1?'noche':'noches'} ${t.nat?'nacional':'internacional'} · ${eur(pe.im)}${t.cur?' (hasta hoy)':''}</div>`:''}
-${xs.filter(x=>x.k=='g').map(x=>xl(x,m)).join('')}
+const xl=(x,m)=>`<div>${x.k=='d'?'Dieta':'Gasto vario'}: ${m?fm(x.d)+' · ':''}${esc(x.c)}${x.k=='g'?' '+eur(x.im):(x.ma>0?' '+eur(x.ma):'')} <span class="xg">${pay(x)}<button class="x" onclick="askXp(${x.id},this)">×</button></span></div>`;
+const xt=x=>`<div class="xr"><span class="xd">${fm(x.d)}</span><span class="xa">&rarr;</span><span class="xt">${x.k=='d'?'Dieta':'Gasto vario'}: ${esc(x.c)}${x.k=='g'?' '+eur(x.im):(x.ma>0?' '+eur(x.ma):'')} <span class="xg">${pay(x)}<button class="x" onclick="askXp(${x.id},this)">×</button></span></span></div>`;
+function blk(t){const m=t.cur||t.e!=t.s,xs=S.exp.filter(x=>tripOf(x.d)===t).sort((a,b)=>a.d.localeCompare(b.d)||(a.k==b.k?0:a.k=='d'?-1:1)||a.id-b.id),pe=pern(t),n=new Date();
+return `<div class="li" style="display:flow-root"><button class="tb" style="float:right;margin-left:8px" aria-label="Eliminar viaje" onclick="askVj(${t.id},this)">${TR}</button><b>${fd(t.s)}${t.st?' '+t.st:''} salida - ${t.cur?'llegada por definir':fd(t.e)+(t.et?' '+t.et:'')+' llegada'}</b><div class="sm" style="padding-left:14px">
+<div>Destino: ${esc(t.c)}${t.p?' ('+esc(t.p)+')':''}${t.km?' '+t.km+'km - '+(t.km*S.cfg.km).toFixed(2).replace('.',',')+'€':''}</div>
+${t.pn?`<div>Pernoctas: ${pe.n} ${pe.n==1?'noche':'noches'} ${t.nat?'nacional':'internacional'} ${eur(pe.im)}${t.cur?' (hasta hoy)':''}</div>`:''}
+${t.di?`<div>Dietas anteriores: ${eur(t.di)}</div>`:''}
+${xs.map(xt).join('')}
 ${t.cur?`<div class="row" style="margin-top:8px"><label class="cl"><input type="checkbox" class="ck" checked onchange="closeT(${t.id})"> En curso</label><input type="date" id="ce${t.id}" value="${ymd(n)}"><input type="time" id="ct${t.id}" value="${hm(n)}"></div><div class="mut" style="font-size:12px">Desmarca “En curso” para cerrar el viaje con esa llegada.</div>`:''}
-</div></div><button class="tb" aria-label="Eliminar viaje" onclick="askVj(${t.id},this)">${TR}</button></div>`}
+</div></div>`}
 function vV(){const s=stats(),t=ymd(new Date()),it=[];
 s.tr.forEach(r=>it.push([r.s+' '+(r.st||'00:00'),blk(r)]));
 const by={};s.xs.filter(x=>!tripOf(x.d)).forEach(x=>(by[x.d]=by[x.d]||[]).push(x));
 Object.keys(by).forEach(d=>it.push([d+' 99',`<div class="li" style="align-items:flex-start"><div style="flex:1"><b>${fd(d)}</b><div class="sm" style="padding-left:14px">${by[d].sort((a,b)=>a.k.localeCompare(b.k)).map(x=>xl(x,0)).join('')}</div></div></div>`]));
 it.sort((a,b)=>a[0].localeCompare(b[0]));
 return `<h1>Viajes</h1><p class="sub">Desplazamientos, dietas y gastos.</p>${mnav()}
-<div class="grid"><div class="card"><div class="mut">Kilómetros</div><div class="n">${s.km} km</div></div><div class="card"><div class="mut">Dietas y pernoctas</div><div class="n">${eur(s.di)}</div></div>
+<div class="grid"><div class="card"><div class="mut">Kilómetros</div><div class="n">${eur(s.km*S.cfg.km)} <span class="mut" style="font:500 14px Barlow,sans-serif;white-space:nowrap">(${s.km} km)</span></div></div><div class="card"><div class="mut">Dietas y pernoctas</div><div class="n">${eur(s.di)}</div></div>
 <div class="card"><div class="mut">Gastos varios</div><div class="n">${eur(s.gv)}</div></div><div class="card"><div class="mut">Con tarjeta particular</div><div class="n ex">${eur(s.gp)}</div></div></div>
 <h2>Nuevo viaje</h2><div class="card"><label>Ciudad de destino</label><input id="vd" placeholder="Ej. Lyon (o «Ciudad, País»)">
 <div class="row" style="margin-top:8px"><div style="flex:2"><label>Fecha de salida</label><input type="date" id="vs" value="${t}"></div><div><label>Hora</label><input type="time" id="vst" value="07:00"></div></div>
@@ -214,8 +220,8 @@ return `<h1>Viajes</h1><p class="sub">Desplazamientos, dietas y gastos.</p>${mna
 <div class="row" style="margin-top:8px"><div><label>Km</label><input type="number" id="vk" min="0" value="0"></div></div>
 <div class="row" style="margin-top:12px"><label class="cl"><input type="checkbox" class="ck" id="vp"> Pernocta</label><label class="cl"><input type="checkbox" class="ck" id="vc"> En curso</label></div>
 <button class="btn p" style="width:100%;margin-top:12px" onclick="addV()">Guardar viaje</button><div class="msg" id="msg"></div></div>
-<h2>Añadir dieta</h2><div class="card"><div class="row"><div><label>Fecha</label><input type="date" id="dd" value="${t}"></div><div style="flex:2"><label>Tipo</label><select id="dk">${['dmn','dcn','dmi','dci'].map(k=>`<option value="${k}">${DT[k]}</option>`).join('')}</select></div></div>
-<div style="margin-top:8px">${paySel('dp')}</div><button class="btn p" style="width:100%;margin-top:10px" onclick="addD()">Guardar dieta</button><div class="msg" id="msgd"></div></div>
+<h2>Añadir dieta</h2><div class="card"><div class="gd"><div><label>Fecha</label><input type="date" id="dd" value="${t}"></div><div><label>Tipo</label><select id="dk">${['dmn','dcn','dmi','dci'].map(k=>`<option value="${k}">${DT[k]}</option>`).join('')}</select></div></div>
+<div class="gd" style="margin-top:8px"><div><label>Importe (€)</label><input type="number" id="dimp" min="0" step="0.01"></div><div>${paySel('dp')}</div></div><button class="btn p" style="width:100%;margin-top:10px" onclick="addD()">Guardar dieta</button><div class="msg" id="msgd"></div></div>
 <h2>Añadir gasto vario</h2><div class="card"><div class="row"><div><label>Fecha</label><input type="date" id="gd" value="${t}"></div><div><label>Importe (€)</label><input type="number" id="gi" min="0" step="0.01"></div></div>
 <label style="margin-top:8px">Concepto</label><input id="gc" placeholder="Gasolina, taxi, peaje…">
 <div style="margin-top:8px">${paySel('gy')}</div><button class="btn p" style="width:100%;margin-top:10px" onclick="addG()">Guardar gasto</button><div class="msg" id="msgg"></div></div>
@@ -230,8 +236,9 @@ S.trips.push({id:Date.now(),d,c:g.c,p:g.p,nat:g.nat,s,st,e:cur?null:e,et:cur?'':
 function closeT(id){const t=S.trips.find(x=>x.id==id);if(!t)return;t.cur=false;t.e=$('ce'+id).value||ymd(new Date());if(t.e<t.s)t.e=t.s;t.et=$('ct'+id).value||hm(new Date());save();render()}
 function addD(){const k=$('dk').value,d=$('dd').value,im=S.cfg[k];
 if(!d)return sayI('Indica la fecha.','msgd');
+const tr=tripOf(d);if(tr&&tr.nat!=null){const nac=k=='dmn'||k=='dcn';if(tr.nat&&!nac)return sayI('Este viaje es nacional: no se puede añadir una dieta internacional.','msgd');if(!tr.nat&&nac)return sayI('Este viaje es internacional: no se puede añadir una dieta nacional.','msgd')}
 if(!im)return sayI('Esa dieta tiene tarifa 0 €. Ponla en Nómina › Tarifas.','msgd');
-S.exp.push({id:Date.now(),d,k:'d',c:DT[k],im,pay:$('dp').value});save();render()}
+const ma=$('dimp').value===''?null:Math.max(0,+$('dimp').value||0);S.exp.push({id:Date.now(),d,k:'d',c:DT[k],im,ma,pay:$('dp').value});save();render()}
 function addG(){const c=$('gc').value.trim(),d=$('gd').value,im=+$('gi').value;
 if(!c||!d||!im)return sayI('Indica fecha, concepto e importe.','msgg');
 S.exp.push({id:Date.now(),d,k:'g',c,im,pay:$('gy').value});save();render()}
