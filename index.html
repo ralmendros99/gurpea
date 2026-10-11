@@ -86,6 +86,24 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 .sm .tag{white-space:nowrap}
 .gd{display:grid;grid-template-columns:1fr 1fr;gap:8px}.gd>*{min-width:0}.gd input,.gd select{height:44px;box-sizing:border-box}
 .xg{white-space:nowrap}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+@supports (height:100dvh){html,body{height:100dvh}}
+main{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+button,input,select,textarea{font-family:inherit;-webkit-appearance:none;appearance:none;box-shadow:none;margin:0;line-height:1.25}
+button{touch-action:manipulation}
+input:not(.ck):not(.mp),select{height:44px;min-height:44px;box-sizing:border-box;padding:0 12px;border-radius:8px}
+input[type=date],input[type=time]{display:block;text-align:left}
+input::-webkit-date-and-time-value{text-align:left;margin:0;min-height:1.25em}
+input::-webkit-datetime-edit{padding:0}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:12px 8px;padding-right:34px}
+.hm select{padding:0 26px 0 10px;background-position:right 9px center}
+::placeholder{color:#6f7b7f;opacity:1}
+textarea{font-size:16px}
+input[type=time]::-webkit-datetime-edit{flex:1 1 auto}
+input[type=time]::-webkit-calendar-picker-indicator{margin-left:auto}
+input[type=time]{padding-left:10px;padding-right:8px}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
@@ -126,10 +144,10 @@ const q=m=>Math.floor(m/15)*15;
 Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){const e=q(w);xf+=e;if(e)days.push([d,w,e,1,0])}else{const x=Math.max(0,w-S.cfg.jm),xq=q(x),n=Math.min(xq,q(bn[d]||0));ord+=w-x;xl+=xq-n;xn+=n;if(xq)days.push([d,w,xq,0,n])}});
 const tr=S.trips.filter(t=>t.s.startsWith(k)),xs=S.exp.filter(x=>x.d.startsWith(k)),sm=f=>xs.filter(f).reduce((a,x)=>a+x.im,0);
 return{ord,xl,xf,xn,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
-const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichajes'],['c','▦','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','€','Nómina']];
+const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichajes'],['c','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12M15 9v12M3 15h18M8 2v4M16 2v4"/></svg>','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M4 10h12M4 14h9M19 6a7.5 7.5 0 1 0 0 12"/></svg>','Nómina']];
 function go(t){if(t!=tab)sel=null;tab=t;render()}
 function shift(n){mo=new Date(mo.getFullYear(),mo.getMonth()+n,1);sel=null;render()}
-const mnav=()=>`<div class="row sp" style="margin-bottom:10px"><button class="btn" onclick="shift(-1)">‹</button><b style="font:700 20px 'Barlow Condensed'">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><button class="btn" onclick="shift(1)">›</button></div>`;
+const mnav=()=>`<div class="row sp" style="margin-bottom:10px"><button class="btn" onclick="shift(-1)">‹</button><b style="font:700 20px 'Barlow Condensed',sans-serif">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><button class="btn" onclick="shift(1)">›</button></div>`;
 const say=t=>{const m=$('msg');if(m)m.textContent=t};
 function render(){
 $('nav').innerHTML=TABS.map(t=>`<button class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><b>${t[1]}</b>${t[2]}</button>`).join('');
@@ -269,7 +287,7 @@ function cfg(k,v){S.cfg[k]=+v||0;save();render()}
 function bk(){const j=JSON.stringify(S);$('bk').value=j;try{navigator.clipboard.writeText(j).then(()=>say('Copiado. Pégalo en una nota o mensaje y guárdalo.'),()=>say('Selecciona el texto y cópialo a mano.'))}catch(e){say('Selecciona el texto y cópialo a mano.')}}
 function rs(){try{const o=JSON.parse($('bk').value);if(!o.entries)throw 0;S=Object.assign(S,o);save();render()}catch(e){say('El texto no es una copia válida.')}}
 /* CALENDARIO */
-const mnavC=()=>`<div class="row sp" style="margin:10px 0"><button class="btn" onclick="shift(-1)">‹</button><span style="position:relative;display:inline-block"><b style="font:700 20px 'Barlow Condensed'">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><input type="month" class="mp" value="${ym()}" onclick="try{this.showPicker()}catch(e){}" onchange="setMo(this.value)"></span><button class="btn" onclick="shift(1)">›</button></div>`;
+const mnavC=()=>`<div class="row sp" style="margin:10px 0"><button class="btn" onclick="shift(-1)">‹</button><span style="position:relative;display:inline-block"><b style="font:700 20px 'Barlow Condensed',sans-serif">${MES[mo.getMonth()]} ${mo.getFullYear()}</b><input type="month" class="mp" value="${ym()}" onclick="try{this.showPicker()}catch(e){}" onchange="setMo(this.value)"></span><button class="btn" onclick="shift(1)">›</button></div>`;
 const hmSel=(id,v)=>{const m=Math.floor(tm(v)/15)*15,h=Math.floor(m/60),mi=m%60;return `<div class="hm"><select id="${id}h">${Array.from({length:24},(_,i)=>`<option ${i==h?'selected':''}>${pad(i)}</option>`).join('')}</select><span>:</span><select id="${id}m">${[0,15,30,45].map(q=>`<option ${q==mi?'selected':''}>${pad(q)}</option>`).join('')}</select></div>`};
 function setMo(v){if(!v)return;const a=v.split('-');mo=new Date(+a[0],+a[1]-1,1);sel=null;render()}
 function vC(){const y=mo.getFullYear(),m=mo.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,nd=new Date(y,m+1,0).getDate(),t=ymd(new Date());
