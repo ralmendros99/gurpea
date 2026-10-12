@@ -104,6 +104,14 @@ textarea{font-size:16px}
 input[type=time]::-webkit-datetime-edit{flex:1 1 auto}
 input[type=time]::-webkit-calendar-picker-indicator{margin-left:auto}
 input[type=time]{padding-left:10px;padding-right:8px}
+input[type=date]:not(.ck):not(.mp),input[type=time]:not(.ck):not(.mp){height:auto;min-height:0;padding-top:10px;padding-bottom:10px;line-height:22px}
+input::-webkit-date-and-time-value{min-height:22px;line-height:22px}
+@supports (-webkit-touch-callout:none){
+input[type=date],input[type=time]{display:flex;align-items:center;line-height:normal;padding-top:0;padding-bottom:0}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{margin-left:auto}
+select{line-height:normal;padding-top:0;padding-bottom:0}
+}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
