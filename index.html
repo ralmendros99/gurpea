@@ -116,6 +116,12 @@ input[type=date],input[type=time]{position:relative;background-repeat:no-repeat;
 input[type=date]{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='17' rx='2'/%3E%3Cpath d='M3 9h18M8 2v4M16 2v4'/%3E%3C/svg%3E")}
 input[type=time]{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
 input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{opacity:0;position:absolute;top:0;right:0;left:0;bottom:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
+.nb{padding:9px 0;border-bottom:1px solid var(--line)}
+.nm{display:flex;justify-content:space-between;gap:12px}
+.ns{display:flex;justify-content:space-between;gap:12px;padding:3px 0 0 14px;color:var(--mut);font-size:14px}
+.nt{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:14px;color:#fff;font-weight:700;font-size:22px}
+.nt span:last-child{font-size:26px}
+.nm b,.ns span:last-child,.nt span:last-child{white-space:nowrap;flex:none}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
@@ -125,7 +131,7 @@ const K='mi-jornada-v1';
 let S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 S=Object.assign({exp:[],entries:[],active:null,trips:[],tasks:{},hol:{},paid:{},cfg:{}},S);
 S.trips.forEach(t=>{if(!t.s){t.s=t.a;t.e=t.b;t.st='';t.et='';t.c=t.c||t.d;t.p=t.p||''}});
-S.cfg=Object.assign({jm:480,he:15,hn:S.cfg&&S.cfg.hf||20,km:0.26,dmn:0,dcn:0,dmi:0,dci:0,pn:0,pi:0},S.cfg);
+S.cfg=Object.assign({jm:480,he:15,hn:S.cfg&&S.cfg.hf||20,km:0.26,kmx:S.cfg&&S.cfg.km!=null?S.cfg.km:0.26,kmc:0,sba:0,irpf:0,ccc:0,mei:0,cfo:0,cde:0,dmn:0,dcn:0,dmi:0,dci:0,pn:0,pi:0},S.cfg);
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -230,7 +236,7 @@ const xl=(x,m)=>`<div>${x.k=='d'?'Dieta':'Gasto vario'}: ${m?fm(x.d)+' · ':''}$
 const xt=x=>`<div class="xr"><span class="xd">${fm(x.d)}</span><span class="xa">&rarr;</span><span class="xt">${x.k=='d'?'Dieta':'Gasto vario'}: ${esc(x.c)}${x.k=='g'?' '+eur(x.im):(x.ma>0?' '+eur(x.ma):'')} <span class="xg">${pay(x)}<button class="x" onclick="askXp(${x.id},this)">×</button></span></span></div>`;
 function blk(t){const m=t.cur||t.e!=t.s,xs=S.exp.filter(x=>tripOf(x.d)===t).sort((a,b)=>a.d.localeCompare(b.d)||(a.k==b.k?0:a.k=='d'?-1:1)||a.id-b.id),pe=pern(t),n=new Date();
 return `<div class="li" style="display:flow-root"><button class="tb" style="float:right;margin-left:8px" aria-label="Eliminar viaje" onclick="askVj(${t.id},this)">${TR}</button><b>${fd(t.s)}${t.st?' '+t.st:''} salida - ${t.cur?'llegada por definir':fd(t.e)+(t.et?' '+t.et:'')+' llegada'}</b><div class="sm" style="padding-left:14px">
-<div>Destino: ${esc(t.c)}${t.p?' ('+esc(t.p)+')':''}${t.km?' '+t.km+'km - '+(t.km*S.cfg.km).toFixed(2).replace('.',',')+'€':''}</div>
+<div>Destino: ${esc(t.c)}${t.p?' ('+esc(t.p)+')':''}${t.km?' '+t.km+'km - '+(t.km*(S.cfg.kmx+S.cfg.kmc)).toFixed(2).replace('.',',')+'€':''}</div>
 ${t.pn?`<div>Pernoctas: ${pe.n} ${pe.n==1?'noche':'noches'} ${t.nat?'nacional':'internacional'} ${eur(pe.im)}${t.cur?' (hasta hoy)':''}</div>`:''}
 ${t.di?`<div>Dietas anteriores: ${eur(t.di)}</div>`:''}
 ${xs.map(xt).join('')}
@@ -242,7 +248,7 @@ const by={};s.xs.filter(x=>!tripOf(x.d)).forEach(x=>(by[x.d]=by[x.d]||[]).push(x
 Object.keys(by).forEach(d=>it.push([d+' 99',`<div class="li" style="align-items:flex-start"><div style="flex:1"><b>${fd(d)}</b><div class="sm" style="padding-left:14px">${by[d].sort((a,b)=>a.k.localeCompare(b.k)).map(x=>xl(x,0)).join('')}</div></div></div>`]));
 it.sort((a,b)=>a[0].localeCompare(b[0]));
 return `<h1>Viajes</h1><p class="sub">Desplazamientos, dietas y gastos.</p>${mnav()}
-<div class="grid"><div class="card"><div class="mut">Kilómetros</div><div class="n">${eur(s.km*S.cfg.km)} <span class="mut" style="font:500 14px Barlow,sans-serif;white-space:nowrap">(${s.km} km)</span></div></div><div class="card"><div class="mut">Dietas y pernoctas</div><div class="n">${eur(s.di)}</div></div>
+<div class="grid"><div class="card"><div class="mut">Kilómetros</div><div class="n">${eur(s.km*(S.cfg.kmx+S.cfg.kmc))} <span class="mut" style="font:500 14px Barlow,sans-serif;white-space:nowrap">(${s.km} km)</span></div></div><div class="card"><div class="mut">Dietas y pernoctas</div><div class="n">${eur(s.di)}</div></div>
 <div class="card"><div class="mut">Gastos varios</div><div class="n">${eur(s.gv)}</div></div><div class="card"><div class="mut">Con tarjeta particular</div><div class="n ex">${eur(s.gp)}</div></div></div>
 <h2>Nuevo viaje</h2><div class="card"><label>Ciudad de destino</label><input id="vd" placeholder="Ej. Lyon (o «Ciudad, País»)">
 <div class="row" style="margin-top:8px"><div style="flex:2"><label>Fecha de salida</label><input type="date" id="vs" value="${t}"></div><div><label>Hora</label><input type="time" id="vst" value="07:00"></div></div>
@@ -276,22 +282,40 @@ function delV(id){const t=S.trips.find(x=>x.id==id);if(t)S.exp=S.exp.filter(x=>t
 function delX(id){S.exp=S.exp.filter(x=>x.id!=id);save();render()}
 /* NÓMINA */
 const eur=n=>n.toFixed(2)+' €';
-function vN(){const s=stats(),c=S.cfg,k=ym(),h=m=>m/60;
-const ex=h(s.xl)*c.he,fe=h(s.xf+s.xn)*c.hn,kmv=s.km*c.km,tot=ex+fe+kmv+s.di,pd=S.paid[k];
+function nomC(){const s=stats(),c=S.cfg,k=ym(),dim=new Date(mo.getFullYear(),mo.getMonth()+1,0).getDate(),ds=new Set();
+S.trips.forEach(t=>{if(t.nat!==false)return;let a=new Date(t.s+'T12:00');const b=new Date((t.cur?ymd(new Date()):t.e)+'T12:00');for(;a<=b;a.setDate(a.getDate()+1)){const d=ymd(a);if(d.startsWith(k))ds.add(d)}});
+const A=c.sba/14,dI=ds.size,ex7=A*dI/dim;
+let eN=0,eF=0,xN=0,xF=0;
+s.days.forEach(([d,w,x,f,n])=>{const vn=(f?0:x-n)/60*c.he,vf=(f?x:n)/60*c.hn;eN+=vn;eF+=vf;if(ds.has(d)){xN+=vn;xF+=vf}});
+const pe=s.tr.reduce((a,t)=>a+pern(t).im,0),kmE=s.km*c.kmx,kmC=s.km*c.kmc;
+let dMa=0,dNet=0;
+s.xs.filter(x=>x.k=='d').forEach(x=>{const ma=x.ma||0,df=Math.max(0,x.im-ma),t=tripOf(x.d),intl=t&&t.nat===false;dMa+=ma;dNet+=df*(intl?1:1-c.irpf/100)});
+const base=A+eN+eF+kmC,c1=base*c.ccc/100,c2=base*c.mei/100,c3=base*c.cfo/100,c4=base*c.cde/100,cot=c1+c2+c3+c4;
+const bi=(A-ex7)+(eN-xN)+(eF-xF)+kmC,irpf=bi*c.irpf/100;
+const dev=A+eN+eF+pe+kmE+kmC+dMa+dNet+s.gvp;
+return{A,dI,ex7,eN,eF,hN:s.xl,hF:s.xn+s.xf,pe,kmE,kmC,dMa,dNet,gv:s.gvp,c1,c2,c3,c4,cot,irpf,liq:dev-cot-irpf}}
+function vN(){const o=nomC(),c=S.cfg;
 const tin=(k,l)=>`<div><label>${l}</label><input type="number" step="0.01" value="${c[k]}" onchange="cfg('${k}',this.value)"></div>`;
+const g=(a,b)=>`<div class="gd" style="margin-top:8px">${a}${b}</div>`;
+const T=t=>`<div style="font:700 18px 'Barlow Condensed',sans-serif;margin:16px 0 0">${t}</div>`;
+const nb=(l,v,subs)=>`<div class="nb"><div class="nm"><span>${l}</span><b>${v}</b></div>${(subs||[]).map(x=>`<div class="ns"><span>${x[0]}</span><span>${x[1]}</span></div>`).join('')}</div>`;
+const neg=v=>'-'+eur(v);
 return `<h1>Nómina</h1><p class="sub">Resumen del mes para contrastarlo con tu nómina.</p>${mnav()}
-<div class="card"><div class="li"><span>Horas ordinarias</span><b>${fmt(s.ord)}</b></div>
-<div class="li"><span>Extra normales</span><b>${fmt(s.xl)} · ${eur(ex)}</b></div>
-<div class="li"><span>Extra nocturnas/festivas</span><b>${fmt(s.xf+s.xn)} · ${eur(fe)}</b></div>
-<div class="li"><span>Kilometraje (${s.km} km)</span><b>${eur(kmv)}</b></div>
-<div class="li"><span>Dietas y pernoctas</span><b>${eur(s.di)}</b></div>
-<div class="li"><span><b>Total variable estimado</b></span><b class="n">${eur(tot)}</b></div>
-<div class="li"><span class="mut">Gastos varios (aparte)<br>de ellos con tarjeta particular</span><span style="text-align:right"><b>${eur(s.gv)}</b><br><b class="ex">${eur(s.gvp)}</b></span></div></div>
-<h2>Contrastar</h2><div class="card"><label>Variable que aparece en tu nómina de ${MES[mo.getMonth()].toLowerCase()} (€)</label>
-<input type="number" step="0.01" id="pd" value="${pd??''}" onchange="setPd(this.value)">
-${pd!=null&&pd!==''?`<p class="${tot-pd>0.5?'ex':'ok'}" style="margin:10px 0 0"><b>${tot-pd>0.5?'Te faltan por cobrar '+eur(tot-pd):tot-pd<-0.5?'Te han pagado '+eur(pd-tot)+' más de lo calculado':'Cuadra con tu cálculo'}</b></p>`:''}</div>
-<h2>Tarifas</h2><div class="card"><div class="mut" style="margin-bottom:6px">Horas y kilometraje</div><div class="row">${tin('he','€/h extra normal')}${tin('hn','€/h extra nocturna/festiva')}${tin('km','€/km')}</div>
-<div class="mut" style="margin:12px 0 6px">Dietas</div><div class="row">${tin('dmn','Media dieta nacional')}${tin('dcn','Dieta completa nacional')}</div><div class="row" style="margin-top:8px">${tin('dmi','Media dieta internacional')}${tin('dci','Dieta completa internacional')}</div><div class="row" style="margin-top:8px">${tin('pn','Pernocta nacional')}${tin('pi','Pernocta internacional')}</div></div>
+<div class="card">
+${nb('Salario base',eur(o.A),o.dI?[['Exento de I.R.P.F. (7P · '+o.dI+(o.dI==1?' día':' días')+' en viaje internacional)',eur(o.ex7)]]:[])}
+${nb('Horas extra',eur(o.eN+o.eF),[['Horas extra normales · '+fmt(o.hN),eur(o.eN)],['Horas extra nocturnas/festivas · '+fmt(o.hF),eur(o.eF)]])}
+${nb('Pernoctas',eur(o.pe))}
+${nb('Kilometraje',eur(o.kmE+o.kmC),[['Kilometraje exento',eur(o.kmE)],['Kilometraje cotizado',eur(o.kmC)]])}
+${nb('Dietas',eur(o.dMa+o.dNet),[['Introducida en los viajes',eur(o.dMa)],['Diferencia con la tarifa (neta de I.R.P.F.)',eur(o.dNet)]])}
+${nb('Gastos varios (tarjeta particular)',eur(o.gv))}
+${nb('Cotizaciones',neg(o.cot),[['Cont. Comu. ('+c.ccc+'%)',neg(o.c1)],['MEI ('+c.mei+'%)',neg(o.c2)],['Formación ('+c.cfo+'%)',neg(o.c3)],['Desempleo ('+c.cde+'%)',neg(o.c4)]])}
+${nb('Tributación I.R.P.F. ('+c.irpf+'%)',neg(o.irpf))}
+<div class="nt"><span>Importe total a cobrar</span><span>${eur(o.liq)}</span></div></div>
+<h2>Tarifas</h2><div class="card">
+${T('Salario')}${g(tin('sba','Salario bruto anual (€)'),tin('irpf','I.R.P.F. (%)'))}${g(tin('ccc','Cot. Cont. Comu. (%)'),tin('mei','Cot. MEI (%)'))}${g(tin('cfo','Cot. Formación (%)'),tin('cde','Cot. Desempleo (%)'))}
+${T('Horas extra')}${g(tin('he','Extra normal (€/h)'),tin('hn','Extra nocturna/festiva (€/h)'))}
+${T('Kilometrajes')}${g(tin('kmx','Kilometraje exento (€/km)'),tin('kmc','Kilometraje cotizado (€/km)'))}
+${T('Dietas')}${g(tin('dmn','Media dieta nacional (€)'),tin('dmi','Media dieta internacional (€)'))}${g(tin('dcn','Dieta completa nacional (€)'),tin('dci','Dieta completa internacional (€)'))}${g(tin('pn','Pernocta nacional (€)'),tin('pi','Pernocta internacional (€)'))}</div>
 <h2>Copia de seguridad</h2><div class="card"><div class="row"><button class="btn" onclick="bk()">Copiar datos</button><button class="btn" onclick="rs()">Restaurar</button></div>
 <textarea id="bk" placeholder="Pega aquí una copia para restaurarla"></textarea><div class="msg" id="msg"></div></div>`}
 function setPd(v){S.paid[ym()]=v===''?null:+v;save();render()}
