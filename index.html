@@ -125,6 +125,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .card>.nb:first-child{padding-top:0}
 .tt{font:700 18px 'Barlow Condensed',sans-serif;margin:16px 0 0}
 .card>.tt:first-child{margin-top:0}
+nav button{padding:15px 0 14px}
 </style></head><body>
 <div id="app"><main id="v"></main>
 <nav id="nav"></nav></div>
@@ -134,7 +135,7 @@ const K='mi-jornada-v1';
 let S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 S=Object.assign({exp:[],entries:[],active:null,trips:[],tasks:{},hol:{},paid:{},cfg:{}},S);
 S.trips.forEach(t=>{if(!t.s){t.s=t.a;t.e=t.b;t.st='';t.et='';t.c=t.c||t.d;t.p=t.p||''}});
-S.cfg=Object.assign({jm:480,he:15,hn:S.cfg&&S.cfg.hf||20,km:0.26,kmx:S.cfg&&S.cfg.km!=null?S.cfg.km:0.26,kmc:0,sba:0,irpf:0,ccc:0,mei:0,cfo:0,cde:0,dmn:0,dcn:0,dmi:0,dci:0,pn:0,pi:0},S.cfg);
+S.cfg=Object.assign({jm:480,he:15,hn:S.cfg&&S.cfg.hf||20,hd:0,km:0.26,kmx:S.cfg&&S.cfg.km!=null?S.cfg.km:0.26,kmc:0,sba:0,irpf:0,ccc:0,mei:0,cfo:0,cde:0,dmn:0,dcn:0,dmi:0,dci:0,pn:0,pi:0},S.cfg);
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -160,11 +161,12 @@ let tab='f',mo=new Date(new Date().getFullYear(),new Date().getMonth(),1),sel=nu
 const ym=()=>mo.getFullYear()+'-'+pad(mo.getMonth()+1);
 function stats(){const k=ym(),by={};
 const bn={};S.entries.filter(e=>e.d.startsWith(k)).forEach(e=>{by[e.d]=(by[e.d]||0)+ent(e);bn[e.d]=(bn[e.d]||0)+nm(e)});
-let ord=0,xl=0,xf=0,xn=0,days=[];
-const q=m=>Math.floor(m/15)*15;
-Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){const e=q(w);xf+=e;if(e)days.push([d,w,e,1,0])}else{const x=Math.max(0,w-S.cfg.jm),xq=q(x),n=Math.min(xq,q(bn[d]||0));ord+=w-x;xl+=xq-n;xn+=n;if(xq)days.push([d,w,xq,0,n])}});
+let ord=0,xl=0,xf=0,xn=0,xd=0,days=[];
+const q=m=>Math.floor(m/15)*15,dsp=d=>q(tks(d).filter(t=>t.p.trim().toLowerCase()=='desplazamiento').reduce((a,t)=>a+t.m,0));
+const cut=(X,nN,nF,d)=>{const R=Math.min(X,dsp(d));if(S.cfg.hn>=S.cfg.he){const t=Math.min(nF,R);nF-=t;nN-=R-t}else{const t=Math.min(nN,R);nN-=t;nF-=R-t}return[nN,nF,Math.min(R,480)]};
+Object.keys(by).sort().forEach(d=>{const w=by[d];if(isOff(d)){const e=q(w),[a,b,dx]=cut(e,0,e,d);xf+=b;xd+=dx;if(a+b+dx)days.push([d,w,a+b+dx,1,0,dx,a,b])}else{const x=Math.max(0,w-S.cfg.jm),xq=q(x),n=Math.min(xq,q(bn[d]||0)),[a,b,dx]=cut(xq,xq-n,n,d);ord+=w-x;xl+=a;xn+=b;xd+=dx;if(a+b+dx)days.push([d,w,a+b+dx,0,b,dx,a,b])}});
 const tr=S.trips.filter(t=>t.s.startsWith(k)),xs=S.exp.filter(x=>x.d.startsWith(k)),sm=f=>xs.filter(f).reduce((a,x)=>a+x.im,0);
-return{ord,xl,xf,xn,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
+return{ord,xl,xf,xn,xd,days,tr,xs,km:tr.reduce((a,t)=>a+t.km,0),di:tr.reduce((a,t)=>a+(t.di||0)+pern(t).im,0)+sm(x=>x.k=='d'),gv:sm(x=>x.k=='g'),gp:sm(x=>x.pay=='p'),gvp:sm(x=>x.k=='g'&&x.pay=='p')}}
 const TABS=[['f','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/></svg>','Fichajes'],['c','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12M15 9v12M3 15h18M8 2v4M16 2v4"/></svg>','Calendario'],['v','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>','Viajes'],['x','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M6 3h12M6 21h12M7 3v3.5c0 1.5 1 2.8 2.3 3.7L12 12l-2.7 1.8C8 14.7 7 16 7 17.5V21M17 3v3.5c0 1.5-1 2.8-2.3 3.7L12 12l2.7 1.8c1.3.9 2.3 2.2 2.3 3.7V21"/></svg>','Extras'],['n','<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:1px auto"><path d="M4 10h12M4 14h9M19 6a7.5 7.5 0 1 0 0 12"/></svg>','Nómina']];
 function go(t){if(t!=tab)sel=null;tab=t;render()}
 function shift(n){mo=new Date(mo.getFullYear(),mo.getMonth()+n,1);sel=null;render()}
@@ -215,10 +217,11 @@ S.entries.push({id:Date.now(),d,s,e,br:b});save();render()}
 function delE(id){const r=S.entries.find(x=>x.id==id);S.entries=S.entries.filter(e=>e.id!=id);if(r&&!S.entries.some(x=>x.d==r.d))delete S.tasks[r.d];save();render()}
 /* EXTRAS */
 function vX(){const s=stats();
-return `<h1>Horas extra</h1><p class="sub">Todo lo que supera 8 h en día laborable, más fines de semana y festivos.<br>Las horas entre 22:00 y 6:00 cuentan como nocturnas.</p>${mnav()}
-<div class="grid"><div class="card"><div class="mut">Extra normales</div><div class="n ex">${fmt(s.xl)}</div></div>
-<div class="card"><div class="mut">Extra nocturnas/festivas</div><div class="n ex">${fmt(s.xf+s.xn)}</div></div></div>
-<h2>Días con extra</h2><div class="card">${s.days.length?s.days.map(([d,w,x,f,n])=>`<div class="li"><span>${DL[dow(d)]} ${d.slice(8)}/${d.slice(5,7)}${f?'<span class="mut" style="margin-left:8px">(no laborable)</span>':''}${n?' <span class="mut">('+fmt(n)+' nocturnas)</span>':''}</span><span><span class="mut">${fmt(w)} trabajadas · </span><b class="ex">+${fmt(x)}</b></span></div>`).join(''):'<span class="mut">Sin horas extra este mes.</span>'}</div>`}
+return `<h1>Horas extra</h1><p class="sub">Todo lo que supera 8h en día laborable, más fines de semana y festivos.<br>Las horas entre 22:00 y 6:00 cuentan como nocturnas.<br>Las horas extra de desplazamiento se cobran a un precio diferente.</p>${mnav()}
+<div class="grid" style="grid-template-columns:1fr"><div class="card"><div class="mut">Extra normales</div><div class="n ex">${fmt(s.xl)}</div></div>
+<div class="card"><div class="mut">Extra nocturnas/festivas</div><div class="n ex">${fmt(s.xf+s.xn)}</div></div>
+<div class="card"><div class="mut">Extra desplazamiento</div><div class="n ex">${fmt(s.xd)}</div></div></div>
+<h2>Días con extra</h2><div class="card">${s.days.length?s.days.map(([d,w,x,f,n,dx])=>`<div class="li"><span>${DL[dow(d)]} ${d.slice(8)}/${d.slice(5,7)}${f?'<span class="mut" style="margin-left:8px">(no laborable)</span>':''}${n?' <span class="mut">('+fmt(n)+' nocturnas)</span>':''}${dx?' <span class="mut">('+fmt(dx)+' desplazamiento)</span>':''}</span><span><span class="mut">${fmt(w)} trabajadas · </span><b class="ex">+${fmt(x)}</b></span></div>`).join(''):'<span class="mut">Sin horas extra este mes.</span>'}</div>`}
 /* VIAJES */
 const DT={dmn:'Media dieta nacional',dcn:'Dieta completa nacional',dmi:'Media dieta internacional',dci:'Dieta completa internacional',pn:'Pernocta nacional',pi:'Pernocta internacional'};
 const sayI=(t,i)=>{const m=$(i);if(m)m.textContent=t};
@@ -287,16 +290,20 @@ function delX(id){S.exp=S.exp.filter(x=>x.id!=id);save();render()}
 const eur=n=>n.toFixed(2)+' €';
 function nomC(){const s=stats(),c=S.cfg,k=ym(),dim=new Date(mo.getFullYear(),mo.getMonth()+1,0).getDate(),ds=new Set();
 S.trips.forEach(t=>{if(t.nat!==false)return;let a=new Date(t.s+'T12:00');const b=new Date((t.cur?ymd(new Date()):t.e)+'T12:00');for(;a<=b;a.setDate(a.getDate()+1)){const d=ymd(a);if(d.startsWith(k))ds.add(d)}});
-const A=c.sba/14,dI=ds.size,ex7=A*dI/dim;
-let eN=0,eF=0,xN=0,xF=0;
-s.days.forEach(([d,w,x,f,n])=>{const vn=(f?0:x-n)/60*c.he,vf=(f?x:n)/60*c.hn;eN+=vn;eF+=vf;if(ds.has(d)){xN+=vn;xF+=vf}});
-const pe=s.tr.reduce((a,t)=>a+pern(t).im,0),kmE=s.km*c.kmx,kmC=s.km*c.kmc;
-let dMa=0,dNet=0;
-s.xs.filter(x=>x.k=='d').forEach(x=>{const ma=x.ma||0,df=Math.max(0,x.im-ma),t=tripOf(x.d),intl=t&&t.nat===false;dMa+=ma;dNet+=df*(intl?1:1-c.irpf/100)});
-const base=A+eN+eF+kmC,c1=base*c.ccc/100,c2=base*c.mei/100,c3=base*c.cfo/100,c4=base*c.cde/100,cot=c1+c2+c3+c4;
-const bi=(A-ex7)+(eN-xN)+(eF-xF)+kmC,irpf=bi*c.irpf/100;
-const dev=A+eN+eF+pe+kmE+kmC+dMa+dNet+s.gvp;
-return{A,dI,ex7,eN,eF,hN:s.xl,hF:s.xn+s.xf,pe,kmE,kmC,dMa,dNet,gv:s.gvp,c1,c2,c3,c4,cot,irpf,liq:dev-cot-irpf}}
+const r2=v=>Math.round((v+1e-9)*100)/100;
+const A=r2(c.sba/14),dI=ds.size,ex7=r2(A*dI/dim);
+let eN=0,eF=0,eD=0,xN=0,xF=0,xD=0;
+s.days.forEach(([d,w,x,f,n,dx,a,b])=>{const vn=a/60*c.he,vf=b/60*c.hn,vd=dx/60*c.hd;eN+=vn;eF+=vf;eD+=vd;if(ds.has(d)){xN+=vn;xF+=vf;xD+=vd}});
+eN=r2(eN);eF=r2(eF);eD=r2(eD);xN=r2(xN);xF=r2(xF);xD=r2(xD);
+const pe=r2(s.tr.reduce((a,t)=>a+pern(t).im,0)),kmE=r2(s.km*c.kmx),kmC=r2(s.km*c.kmc);
+let dMa=0,dDf=0,dDI=0;
+s.xs.filter(x=>x.k=='d').forEach(x=>{const ma=x.ma||0,df=Math.max(0,x.im-ma),t=tripOf(x.d),intl=t&&t.nat===false;dMa+=ma;dDf+=df;if(intl)dDI+=df});
+dMa=r2(dMa);dDf=r2(dDf);dDI=r2(dDI);
+const gv=r2(s.gvp),pp=r2(A*2/12),base=r2(A+pp+(eN-xN)+(eF-xF)+(eD-xD)+kmC+dDf);
+const c1=r2(base*c.ccc/100),c2=r2(base*c.mei/100),c3=r2(base*c.cfo/100),c4=r2(base*c.cde/100),cot=r2(c1+c2+c3+c4);
+const bi=r2((A-ex7)+(eN-xN)+(eF-xF)+(eD-xD)+kmC+(dDf-dDI)),irpf=r2(bi*c.irpf/100);
+const dev=A+eN+eF+eD+pe+kmE+kmC+dMa+dDf+gv;
+return{A,dI,ex7,eN,eF,eD,hN:s.xl,hF:s.xn+s.xf,hD:s.xd,pe,kmE,kmC,dMa,dDf,gv,pp,base,c1,c2,c3,c4,cot,bi,irpf,liq:r2(dev-cot-irpf)}}
 function vN(){const o=nomC(),c=S.cfg;
 const tin=(k,l)=>`<div><label>${l}</label><input type="number" step="0.01" value="${c[k]}" onchange="cfg('${k}',this.value)"></div>`;
 const g=(a,b)=>`<div class="gd" style="margin-top:8px">${a}${b}</div>`;
@@ -306,17 +313,17 @@ const neg=v=>'-'+eur(v);
 return `<h1>Nómina</h1><p class="sub">Resumen del mes para contrastarlo con tu nómina.</p>${mnav()}
 <div class="card">
 ${nb('Salario base',eur(o.A),o.dI?[['Exento de I.R.P.F. (7P · '+o.dI+(o.dI==1?' día':' días')+' en viaje internacional)',eur(o.ex7)]]:[])}
-${nb('Horas extra',eur(o.eN+o.eF),[['Horas extra normales · '+fmt(o.hN),eur(o.eN)],['Horas extra nocturnas/festivas · '+fmt(o.hF),eur(o.eF)]])}
+${nb('Horas extra',eur(o.eN+o.eF+o.eD),[['Horas extra normales · '+fmt(o.hN),eur(o.eN)],['Horas extra nocturnas/festivas · '+fmt(o.hF),eur(o.eF)],['Horas extra desplazamiento · '+fmt(o.hD),eur(o.eD)]])}
 ${nb('Pernoctas',eur(o.pe))}
 ${nb('Kilometraje',eur(o.kmE+o.kmC),[['Kilometraje exento',eur(o.kmE)],['Kilometraje cotizado',eur(o.kmC)]])}
-${nb('Dietas',eur(o.dMa+o.dNet),[['Introducida en los viajes',eur(o.dMa)],['Diferencia con la tarifa (neta de I.R.P.F.)',eur(o.dNet)]])}
+${nb('Dietas',eur(o.dMa+o.dDf),[['Dieta exenta (introducida en el viaje)',eur(o.dMa)],['Dieta cotizada (diferencia con la tarifa)',eur(o.dDf)]])}
 ${nb('Gastos varios (tarjeta particular)',eur(o.gv))}
 ${nb('Cotizaciones',neg(o.cot),[['Cont. Comu. ('+c.ccc+'%)',neg(o.c1)],['MEI ('+c.mei+'%)',neg(o.c2)],['Formación ('+c.cfo+'%)',neg(o.c3)],['Desempleo ('+c.cde+'%)',neg(o.c4)]])}
 ${nb('Tributación I.R.P.F. ('+c.irpf+'%)',neg(o.irpf))}
 <div class="nt"><span>Importe total a cobrar</span><span>${eur(o.liq)}</span></div></div>
 <h2>Tarifas</h2><div class="card">
 ${T('Salario')}${g(tin('sba','Salario bruto anual (€)'),tin('irpf','I.R.P.F. (%)'))}${g(tin('ccc','Cot. Cont. Comu. (%)'),tin('mei','Cot. MEI (%)'))}${g(tin('cfo','Cot. Formación (%)'),tin('cde','Cot. Desempleo (%)'))}
-${T('Horas extra')}${g(tin('he','Extra normal (€/h)'),tin('hn','Extra nocturna/festiva (€/h)'))}
+${T('Horas extra')}${g(tin('he','Extra normal (€/h)'),tin('hn','Extra nocturna/festiva (€/h)'))}${g(tin('hd','Extra desplazamiento (€/h)'),'<div></div>')}
 ${T('Kilometrajes')}${g(tin('kmx','Kilometraje exento (€/km)'),tin('kmc','Kilometraje cotizado (€/km)'))}
 ${T('Dietas')}${g(tin('dmn','Media dieta nacional (€)'),tin('dmi','Media dieta internacional (€)'))}${g(tin('dcn','Dieta completa nacional (€)'),tin('dci','Dieta completa internacional (€)'))}${g(tin('pn','Pernocta nacional (€)'),tin('pi','Pernocta internacional (€)'))}</div>
 <h2>Copia de seguridad</h2><div class="card"><div class="row"><button class="btn" onclick="bk()">Copiar datos</button><button class="btn" onclick="rs()">Restaurar</button></div>
